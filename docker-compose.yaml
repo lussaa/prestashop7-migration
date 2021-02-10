@@ -1,0 +1,49 @@
+version: "3"
+services:
+  apache:
+    image: prestashop/prestashop:1.7.7.0
+    restart: always
+    ports:
+      - 8090:80
+      - 8473:443
+    volumes:
+      - ./www-root:/var/www
+      - ./log/apache:/var/log/apache
+      - ./log/php:/var/log/php
+    environment:
+      - PHP_SMTP=0
+      - PHP_SMTP_FROM=foo@bar.com
+      - MYSQL_ROOT_PASSWORD=stickaz
+      - MYSQL_PASSWORD=stickaz
+      - MYSQL_DATABASE=stickaz
+      - MYSQL_USER=stickaz
+      - MYSQL_HOST=database
+    networks:
+      - internal
+      - external
+  database:
+    image: mariadb:5.5
+    restart: always
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    volumes:
+      - database:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=stickaz
+      - MYSQL_PASSWORD=stickaz
+      - MYSQL_DATABASE=stickaz
+      - MYSQL_USER=stickaz
+    networks:
+      - internal
+      - external
+    ports:
+      - 3308:3306
+networks:
+  external:
+    driver: bridge
+    internal: false
+  internal:
+    driver: bridge
+    internal: true
+    
+volumes:
+  database:
