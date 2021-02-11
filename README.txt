@@ -38,13 +38,31 @@ Interactive php shell and example of product creation:
 
 
 
-LANG=1
 SKIP=1
 SHIFT=1
-QUERY="select c.id_category+$SHIFT,id_parent+$SHIFT,name,description,link_rewrite from ps_category c, ps_category_lang cl where c.id_category=cl.id_category and active=1 and c.id_category > $SKIP  and id_lang=$LANG"
-OUTFILE=categories_$LANG
-
-docker exec -it old_stickaz_db mysql old --batch -e "$QUERY" | tail +2 > $OUTFILE.tsv
+QUERY="
+    SELECT
+        c.id_category+$SHIFT,
+        id_parent+$SHIFT,
+        cl1.name,
+        cl1.description,
+        cl1.link_rewrite,
+        cl2.name,
+        cl2.description,
+        cl2.link_rewrite
+    FROM
+        ps_category c,
+        ps_category_lang cl1,
+        ps_category_lang cl2
+    WHERE
+        c.id_category=cl1.id_category
+        AND c.id_category=cl2.id_category
+        AND active=1
+        AND c.id_category > $SKIP
+        AND cl1.id_lang=1
+        AND cl2.id_lang=2"
+OUTFILE=categories_all
+docker exec -it old_stickaz_db mysql old --batch  --default_character_set utf8 -e "$QUERY" | tail +2 > $OUTFILE.tsv
 
 # csvify  TODO commmas, quotes ...
 cat $OUTFILE.tsv | tr '	' ';' > $OUTFILE.csv
@@ -56,5 +74,5 @@ cat $OUTFILE.tsv | tr '	' ';' > $OUTFILE.csv
 
 Import categories csv:
 
-cat categories_1.csv | docker exec -i presta7_new_apache_1 php /scripts/import-categories.php
+cat categories_all.csv | docker exec -i presta7_new_apache_1 php /scripts/import-categories.php
 
