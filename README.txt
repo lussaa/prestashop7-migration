@@ -47,9 +47,11 @@ QUERY="
         cl1.name,
         cl1.description,
         cl1.link_rewrite,
+        cl1.meta_keywords,
         cl2.name,
         cl2.description,
-        cl2.link_rewrite
+        cl2.link_rewrite,
+        cl2.meta_keywords
     FROM
         ps_category c,
         ps_category_lang cl1,
@@ -76,3 +78,10 @@ Import categories csv:
 
 cat categories_all.csv | docker exec -i presta7_new_apache_1 php /scripts/import-categories.php
 
+
+
+
+## TODO ##
+1 - delete existing categories
+2 - copy category images into img/c/<id>.jpg
+3 - run the import

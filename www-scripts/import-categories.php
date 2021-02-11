@@ -30,6 +30,7 @@ $home->add();
 
 echo "Importing\n";
 
+
 $row = 1;
   while (($data = fgetcsv(STDIN, 1000, ";")) !== FALSE) {
     $num = count($data);
@@ -42,10 +43,12 @@ $row = 1;
   $c->force_id = true;
   $c->id_category = $data[0];
   $c->id = $data[0];
-  $c->id_parent = $data[1];
-  $c->name = [ EN => $data[2], FR => $data[5] ];
-  $c->description = [ EN => $data[3], FR => $data[6] ];
-  $c->link_rewrite = [ EN => $data[4], FR => $data[7] ];
+  $c->id_image = (int) $data[0];
+  $c->id_parent = (int) $data[1];
+  $c->name = [ EN => $data[2], FR => $data[6] ];
+  $c->description = [ EN => $data[3], FR => $data[7] ];
+  $c->link_rewrite = [ EN => $data[4], FR => $data[8] ];
+  $c->meta_keywords = [ EN => $data[5], FR => $data[9] ];
   $c->add();
 
   echo "Inserted category: " . $c->id . " - " . $data[2] . " (parent " . $data[1] . ")\n"; 
