@@ -34,3 +34,27 @@ Interactive php shell and example of product creation:
     php > $p->add();
     php > 
 
+
+
+
+
+LANG=1
+SKIP=1
+SHIFT=1
+QUERY="select c.id_category+$SHIFT,id_parent+$SHIFT,name,description,link_rewrite from ps_category c, ps_category_lang cl where c.id_category=cl.id_category and active=1 and c.id_category > $SKIP  and id_lang=$LANG"
+OUTFILE=categories_$LANG
+
+docker exec -it old_stickaz_db mysql old --batch -e "$QUERY" | tail +2 > $OUTFILE.tsv
+
+# csvify  TODO commmas, quotes ...
+cat $OUTFILE.tsv | tr '	' ';' > $OUTFILE.csv
+
+
+
+
+
+
+Import categories csv:
+
+cat categories_1.csv | docker exec -i presta7_new_apache_1 php /scripts/import-categories.php
+
