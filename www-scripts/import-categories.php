@@ -30,20 +30,50 @@ $home->add();
 
 echo "Importing\n";
 
+$datas = array();
+while (($data = fgetcsv(STDIN, 1000, ";")) !== FALSE) {
+    $datas[] = $data;
+}
 
-$row = 1;
-  while (($data = fgetcsv(STDIN, 1000, ";")) !== FALSE) {
-    $num = count($data);
-  //echo "$num fields in line $row:\n";
-  $row++;
-  for ($c=0; $c < $num; $c++) {
-      //echo "    " . $data[$c] . "\n";
+
+echo "Downloading images\n";
+
+foreach($datas as $data) {
+  $id = $data[0];
+  $legacy_id = ((int) $id) - 1;
+  $image_url = "https://www.stickaz.com/img/c/" . $legacy_id .".jpg";
+  $image_path = "./img/c/" . $id . ".jpg";
+  $image = file_get_contents($image_url);
+  if ($image !== FALSE) {
+    file_put_contents($image_path, $image, LOCK_EX);
   }
-  $c = new Category();
+}
+
+
+echo "Regenerating thumbnails\n";
+
+class MyAdminImagesController extends AdminImagesControllerCore
+{
+  public function __construct()
+  {}
+
+	public function regenerateThumbnails($type = 'all', $deleteOldImages = false)
+	{
+			return parent::_regenerateThumbnails($type, $deleteOldImages);
+	}
+}
+$ic = new MyAdminImagesController;
+$ic->regenerateThumbnails();
+
+
+echo "Creating categories\n";
+foreach($datas as $data) {
+  $id = $data[0];
+  $c = new Category($id);
   $c->force_id = true;
-  $c->id_category = $data[0];
-  $c->id = $data[0];
-  $c->id_image = (int) $data[0];
+  $c->id_category = $id;
+  $c->id = $id;
+  $c->id_image = (int) $id;
   $c->id_parent = (int) $data[1];
   $c->name = [ EN => $data[2], FR => $data[6] ];
   $c->description = [ EN => $data[3], FR => $data[7] ];
