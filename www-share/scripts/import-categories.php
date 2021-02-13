@@ -29,12 +29,9 @@ echo "Downloading images\n";
 foreach($raw_categories as $raw_category) {
   $legacy_id = $raw_category->id_category;
   $new_id = ((int) $legacy_id) + 1;
-  $image_url = "https://www.stickaz.com/img/c/" . $legacy_id .".jpg";
-  $image_path = "./img/c/" . $new_id . ".jpg";
-  $image = @file_get_contents($image_url);
-  if ($image !== FALSE) {
-    file_put_contents($image_path, $image, LOCK_EX);
-  }
+  $image_source = "/www-share/data/img/c/" . $legacy_id .".jpg";
+  $image_dest = "./img/c/" . $new_id . ".jpg";
+  @copy($image_source, $image_dest);
 }
 
 

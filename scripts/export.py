@@ -4,6 +4,7 @@ import os
 import json
 from subprocess import call
 import mysql.connector 
+import urllib.request
 
 here = os.path.dirname(os.path.realpath(__file__))
 
@@ -36,7 +37,8 @@ def run_export():
             AND active=1
             AND cl1.id_lang=1
             AND cl2.id_lang=2"""
-    export_one(categories_query, os.path.join(destination_dir, 'categories'))
+    categories = export_one(categories_query, os.path.join(destination_dir, 'categories'))
+    download_images(categories)
 
 
 def export_one(query, file_base):
@@ -57,6 +59,25 @@ def export_one(query, file_base):
     with open(destination, 'wb') as dest:
         j = json.dumps(result, indent=4)
         dest.write(j.encode('utf-8'))
+    return result['categories']
+
+
+def download_images(categories):
+    for c in categories:
+        cid = c['id_category']
+        try:
+            download_category_image(cid)
+        except:
+            pass
+            
+def download_category_image(cid):
+        image_url = f'https://www.stickaz.com/img/c/{cid}.jpg'
+        destination_dir = os.path.realpath(os.path.join(here, '../www-share/data/img/c'))
+        destination_path = os.path.join(destination_dir, f'{cid}.jpg')
+        with urllib.request.urlopen(image_url) as src:
+            os.makedirs(destination_dir, exist_ok=True)
+            with open(destination_path, 'wb') as dest:
+                dest.write(src.read())
 
 
 if __name__ == '__main__':
