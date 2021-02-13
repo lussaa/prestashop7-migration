@@ -16,33 +16,27 @@ if ($res) {
 const EN = 1;
 const FR = 2;
 
-// Recreate category 1/Home. Only 0/Root was kept after deleting "all"
-$home = new Category();
-$home->force_id = true;
-$home->id_category = 2;
-$home->id = 2;
-$home->id_parent = 1;
-$home->name = [ EN => "Home" ];
-$home->link_rewrite = [ EN => "home" ];
-$home->add();
-
-
 
 echo "Importing\n";
 
 $raw_categories = array();
+$first_skip = true; // Skip header line with column names
 while (($raw_category = fgetcsv(STDIN, 1000, ";")) !== FALSE) {
+  if ($first_skip) {
+    $first_skip = false;
+  } else {
     $raw_categories[] = $raw_category;
+  }
 }
 
 
 echo "Downloading images\n";
 
 foreach($raw_categories as $raw_category) {
-  $id = $raw_category[0];
-  $legacy_id = ((int) $id) - 1;
+  $legacy_id = $raw_category[0];
+  $new_id = ((int) $legacy_id) + 1;
   $image_url = "https://www.stickaz.com/img/c/" . $legacy_id .".jpg";
-  $image_path = "./img/c/" . $id . ".jpg";
+  $image_path = "./img/c/" . $new_id . ".jpg";
   $image = @file_get_contents($image_url);
   if ($image !== FALSE) {
     file_put_contents($image_path, $image, LOCK_EX);
@@ -68,20 +62,21 @@ $ic->regenerateThumbnails();
 
 echo "Creating categories\n";
 foreach($raw_categories as $raw_category) {
-  $id = $raw_category[0];
-  $c = new Category($id);
+  $legacy_id = $raw_category[0];
+  $new_id = ((int) $legacy_id) + 1;
+  $c = new Category($new_id);
   $c->force_id = true;
-  $c->id_category = $id;
-  $c->id = $id;
-  $c->id_image = (int) $id;
-  $c->id_parent = (int) $raw_category[1];
+  $c->id_category = $new_id;
+  $c->id = $new_id;
+  $c->id_image = (int) $new_id;
+  $c->id_parent = ((int) $raw_category[1]) + 1;
   $c->name = [ EN => $raw_category[2], FR => $raw_category[6] ];
   $c->description = [ EN => $raw_category[3], FR => $raw_category[7] ];
   $c->link_rewrite = [ EN => $raw_category[4], FR => $raw_category[8] ];
   $c->meta_keywords = [ EN => $raw_category[5], FR => $raw_category[9] ];
   $c->add();
 
-  echo "Inserted category: " . $c->id . " - " . $raw_category[2] . " (parent " . $raw_category[1] . ")\n"; 
+  echo "Inserted category: " . new_id . " - " . $raw_category[2] . "\n"; 
 }
 
 echo "Done\n";

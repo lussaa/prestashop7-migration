@@ -8,7 +8,7 @@ services:
       - 8473:443
     volumes:
       - ./www-root:/var/www
-      - ./www-scripts:/scripts
+      - ./www-share:/www-share
       - ./log/apache:/var/log/apache
       - ./log/php:/var/log/php
     environment:

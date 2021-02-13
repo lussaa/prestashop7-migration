@@ -8,6 +8,19 @@ First time (after start)
 
 
 
+Export / Import:
+
+# ./scripts/export.sh
+# ./scripts/import.sh
+
+
+
+
+
+
+
+
+
 
 To stuff current stickaz db into a mysql container:
 
@@ -35,53 +48,3 @@ Interactive php shell and example of product creation:
     php > 
 
 
-
-
-
-SKIP=1
-SHIFT=1
-QUERY="
-    SELECT
-        c.id_category+$SHIFT,
-        id_parent+$SHIFT,
-        cl1.name,
-        cl1.description,
-        cl1.link_rewrite,
-        cl1.meta_keywords,
-        cl2.name,
-        cl2.description,
-        cl2.link_rewrite,
-        cl2.meta_keywords
-    FROM
-        ps_category c,
-        ps_category_lang cl1,
-        ps_category_lang cl2
-    WHERE
-        c.id_category=cl1.id_category
-        AND c.id_category=cl2.id_category
-        AND active=1
-        AND c.id_category > $SKIP
-        AND cl1.id_lang=1
-        AND cl2.id_lang=2"
-OUTFILE=categories_all
-docker exec -it old_stickaz_db mysql old --batch  --default_character_set utf8 -e "$QUERY" | tail +2 > $OUTFILE.tsv
-
-# csvify  TODO commmas, quotes ...
-cat $OUTFILE.tsv | tr '	' ';' > $OUTFILE.csv
-
-
-
-
-
-
-Import categories csv:
-
-cat categories_all.csv | docker exec -i presta7_new_apache_1 php /scripts/import-categories.php
-
-
-
-
-## TODO ##
-1 - delete existing categories
-2 - copy category images into img/c/<id>.jpg
-3 - run the import
