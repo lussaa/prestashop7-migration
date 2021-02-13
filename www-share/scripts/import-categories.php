@@ -19,21 +19,15 @@ const FR = 2;
 
 echo "Importing\n";
 
-$raw_categories = array();
-$first_skip = true; // Skip header line with column names
-while (($raw_category = fgetcsv(STDIN, 1000, ";")) !== FALSE) {
-  if ($first_skip) {
-    $first_skip = false;
-  } else {
-    $raw_categories[] = $raw_category;
-  }
-}
-
+$input = "/www-share/data/categories.json";
+$json = file_get_contents($input);
+$obj = json_decode($json);
+$raw_categories = $obj->categories;
 
 echo "Downloading images\n";
 
 foreach($raw_categories as $raw_category) {
-  $legacy_id = $raw_category[0];
+  $legacy_id = $raw_category->id_category;
   $new_id = ((int) $legacy_id) + 1;
   $image_url = "https://www.stickaz.com/img/c/" . $legacy_id .".jpg";
   $image_path = "./img/c/" . $new_id . ".jpg";
@@ -62,21 +56,21 @@ $ic->regenerateThumbnails();
 
 echo "Creating categories\n";
 foreach($raw_categories as $raw_category) {
-  $legacy_id = $raw_category[0];
+  $legacy_id = $raw_category->id_category;
   $new_id = ((int) $legacy_id) + 1;
   $c = new Category($new_id);
   $c->force_id = true;
   $c->id_category = $new_id;
   $c->id = $new_id;
   $c->id_image = (int) $new_id;
-  $c->id_parent = ((int) $raw_category[1]) + 1;
-  $c->name = [ EN => $raw_category[2], FR => $raw_category[6] ];
-  $c->description = [ EN => $raw_category[3], FR => $raw_category[7] ];
-  $c->link_rewrite = [ EN => $raw_category[4], FR => $raw_category[8] ];
-  $c->meta_keywords = [ EN => $raw_category[5], FR => $raw_category[9] ];
+  $c->id_parent = ((int) $raw_category->id_parent) + 1;
+  $c->name = [ EN => $raw_category->name_en, FR => $raw_category->name_fr ];
+  $c->description = [ EN => $raw_category->description_en, FR => $raw_category->description_fr ];
+  $c->link_rewrite = [ EN => $raw_category->link_rewrite_en, FR => $raw_category->link_rewrite_fr ];
+  $c->meta_keywords = [ EN => $raw_category->meta_keywords_en, FR => $raw_category->meta_keywords_fr ];
   $c->add();
 
-  echo "Inserted category: " . new_id . " - " . $raw_category[2] . "\n"; 
+  echo "Inserted category: " . $new_id . " - " . $raw_category->name_en . "\n"; 
 }
 
 echo "Done\n";
