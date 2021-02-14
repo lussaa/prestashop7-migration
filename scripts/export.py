@@ -5,6 +5,7 @@ import json
 from subprocess import call
 import mysql.connector 
 import urllib.request
+from collections import defaultdict
 
 here = os.path.dirname(os.path.realpath(__file__))
 
@@ -14,34 +15,17 @@ def main():
 
 
 def run_export():
-    destination_dir = os.path.realpath(os.path.join(here, '../www-share/data'))
-    categories_query = """
-        SELECT
-            c.id_category,
-            id_parent,
-            cl1.name as name_en,
-            cl1.description as description_en,
-            cl1.link_rewrite as link_rewrite_en,
-            cl1.meta_keywords as meta_keywords_en,
-            cl2.name as name_fr,
-            cl2.description as description_fr,
-            cl2.link_rewrite as link_rewrite_fr,
-            cl2.meta_keywords as meta_keywords_fr
-        FROM
-            ps_category c,
-            ps_category_lang cl1,
-            ps_category_lang cl2
-        WHERE
-            c.id_category=cl1.id_category
-            AND c.id_category=cl2.id_category
-            AND active=1
-            AND cl1.id_lang=1
-            AND cl2.id_lang=2"""
-    categories = export_one(categories_query, os.path.join(destination_dir, 'categories'))
+    destination = os.path.realpath(os.path.join(here, '../www-share/data/model.json'))
+    categories = export_categories()
+    langs = sql_retrieve('SELECT id_lang, iso_code FROM ps_lang')
     download_images(categories)
+    full_model = {'categories': categories, 'langs': langs}
+    with open(destination, 'wb') as dest:
+        j = json.dumps(full_model, indent=4)
+        dest.write(j.encode('utf-8'))
 
 
-def export_one(query, file_base):
+def sql_retrieve(query):
     db = mysql.connector.connect(
         host='localhost',
         port='33306',
@@ -52,14 +36,53 @@ def export_one(query, file_base):
     num_fields = len(c.description)
     field_names = [i[0] for i in c.description]
     rows = c.fetchall()
-    result = {
-        'categories': [dict(zip(field_names, row)) for row in rows]
-    }
-    destination = file_base + '.json'
-    with open(destination, 'wb') as dest:
-        j = json.dumps(result, indent=4)
-        dest.write(j.encode('utf-8'))
-    return result['categories']
+    return [dict(zip(field_names, row)) for row in rows]
+
+
+def sql_retrieve_raw(query):
+    db = mysql.connector.connect(
+        host='localhost',
+        port='33306',
+        user='root',
+        database='old')
+    c = db.cursor()
+    c.execute(query)
+    rows = c.fetchall()
+    return list(rows)
+
+
+def sql_get(query):
+    res = sql_retrieve(query)
+    assert len(res) == 1
+    return res[0]
+
+
+def empty_texts(fields):
+    def create():
+        return {
+            f: {}
+            for f in fields
+        }
+    return create
+
+
+def export_categories():
+    categories = sql_retrieve('SELECT id_category, id_parent FROM ps_category')
+    text_fields = ['name', 'description', 'link_rewrite', 'meta_keywords']
+    text_fields_list = ', '.join(text_fields)
+    text_table = 'ps_category_lang'
+    item_id_field = 'id_category'
+    flat_texts = sql_retrieve_raw(f"""
+        SELECT {item_id_field}, id_lang, {text_fields_list}
+        FROM {text_table}""")
+    indexed_texts = defaultdict(empty_texts(text_fields))
+    for item_id, id_lang, *text_values in flat_texts:
+        for field, value in zip(text_fields, text_values):
+            indexed_texts[item_id][field][id_lang] = value
+    for category in categories:
+        for field in text_fields:
+            category[field] = indexed_texts[category['id_category']][field]
+    return categories
 
 
 def download_images(categories):
@@ -69,7 +92,7 @@ def download_images(categories):
             download_category_image(cid)
         except:
             pass
-            
+
 def download_category_image(cid):
         image_url = f'https://www.stickaz.com/img/c/{cid}.jpg'
         destination_dir = os.path.realpath(os.path.join(here, '../www-share/data/img/c'))

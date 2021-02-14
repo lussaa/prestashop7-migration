@@ -19,7 +19,7 @@ const FR = 2;
 
 echo "Importing\n";
 
-$input = "/www-share/data/categories.json";
+$input = "/www-share/data/model.json";
 $json = file_get_contents($input);
 $obj = json_decode($json);
 $raw_categories = $obj->categories;
@@ -61,13 +61,13 @@ foreach($raw_categories as $raw_category) {
   $c->id = $new_id;
   $c->id_image = (int) $new_id;
   $c->id_parent = ((int) $raw_category->id_parent) + 1;
-  $c->name = [ EN => $raw_category->name_en, FR => $raw_category->name_fr ];
-  $c->description = [ EN => $raw_category->description_en, FR => $raw_category->description_fr ];
-  $c->link_rewrite = [ EN => $raw_category->link_rewrite_en, FR => $raw_category->link_rewrite_fr ];
-  $c->meta_keywords = [ EN => $raw_category->meta_keywords_en, FR => $raw_category->meta_keywords_fr ];
+  $c->name = (array) $raw_category->name;
+  $c->description = (array) $raw_category->description;
+  $c->link_rewrite = (array) $raw_category->link_rewrite;
+  $c->meta_keywords = (array) $raw_category->meta_keywords;
   $c->add();
 
-  echo "Inserted category: " . $new_id . " - " . $raw_category->name_en . "\n"; 
+  echo "Inserted category: " . $new_id . " - " . $c->name[EN] . "\n"; 
 }
 
 echo "Done\n";
