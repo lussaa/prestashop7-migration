@@ -11,7 +11,9 @@ here = os.path.dirname(os.path.realpath(__file__))
 
 
 def main():
-    run_export()
+    # ---- run_export()
+    products = export_products()
+    download_images(products)
 
 
 def run_export():
@@ -85,6 +87,28 @@ def export_categories():
     return categories
 
 
+def export_products():
+    products = sql_retrieve('SELECT id_product, price, id_category_default, active FROM ps_product')
+    text_fields = ['name', 'meta_description', 'link_rewrite', 'meta_keywords']
+    img_field = 'image_ids'
+    text_fields_list = ', '.join(text_fields)
+    text_table = 'ps_product_lang'
+    item_id_field = 'id_product'
+    flat_texts = sql_retrieve_raw(f"""
+        SELECT {item_id_field}, id_lang, {text_fields_list}
+        FROM {text_table}""")
+    indexed_texts = defaultdict(empty_texts(text_fields))
+    images = download_prod_img_data(products)
+    for item_id, id_lang, *text_values in flat_texts:
+        for field, value in zip(text_fields, text_values):
+            indexed_texts[item_id][field][id_lang] = value
+    for product in products:
+        for field in text_fields:
+            product[field] = indexed_texts[product['id_product']][field]
+        product[img_field] = images[product['id_product']]
+    return products
+
+
 def download_images(categories):
     for c in categories:
         cid = c['id_category']
@@ -92,6 +116,24 @@ def download_images(categories):
             download_category_image(cid)
         except:
             pass
+
+
+def download_prod_img_data(products):
+    product_images = sql_retrieve_raw('SELECT id_product, id_image FROM ps_image')
+    product_images_dict = defaultdict(list)
+    for id_product, id_image in product_images:
+        product_images_dict[id_product].append(id_image)
+
+    for product_id in product_images_dict:
+        for image_id in product_images_dict[product_id]:
+            try:
+                print("here would be the download_product_image, id: %d" , product_id)
+                #download_product_image(pid, image_id)
+            except:
+                pass
+
+    return product_images_dict;
+
 
 def download_category_image(cid):
         image_url = f'https://www.stickaz.com/img/c/{cid}.jpg'
@@ -102,6 +144,15 @@ def download_category_image(cid):
             with open(destination_path, 'wb') as dest:
                 dest.write(src.read())
 
+
+def download_product_image(pid, iid):
+    image_url = f'https://www.stickaz.com/img/p/{pid}-{iid}.png'
+    destination_dir = os.path.realpath(os.path.join(here, '../www-share/data/img/p'))
+    destination_path = os.path.join(destination_dir, f'{pid}-{iid}.png')
+    with urllib.request.urlopen(image_url) as src:
+        os.makedirs(destination_dir, exist_ok=True)
+        with open(destination_path, 'wb') as dest:
+            dest.write(src.read())
 
 if __name__ == '__main__':
     main()
