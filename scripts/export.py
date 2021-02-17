@@ -3,29 +3,31 @@
 import os
 import json
 from subprocess import call
+from collections import defaultdict
 import mysql.connector 
 import urllib.request
-from collections import defaultdict
+from decimal import Decimal
 
 here = os.path.dirname(os.path.realpath(__file__))
 
 
 def main():
-    # ---- run_export()
-    products = export_products()
-    download_images(products)
+    run_export()
 
 
 def run_export():
+    # export categories
     destination = os.path.realpath(os.path.join(here, '../www-share/data/model.json'))
     categories = export_categories()
     langs = sql_retrieve('SELECT id_lang, iso_code FROM ps_lang')
     download_images(categories)
-    full_model = {'categories': categories, 'langs': langs}
-    with open(destination, 'wb') as dest:
-        j = json.dumps(full_model, indent=4)
-        dest.write(j.encode('utf-8'))
 
+    products = export_products()
+
+    full_model = {'langs': langs, 'categories': categories, 'products': products}
+    with open(destination, 'wb') as dest:
+        j = json.dumps(full_model, indent=4, cls=DecimalEncoder )
+        dest.write(j.encode('utf-8'))
 
 def sql_retrieve(query):
     db = mysql.connector.connect(
@@ -98,7 +100,7 @@ def export_products():
         SELECT {item_id_field}, id_lang, {text_fields_list}
         FROM {text_table}""")
     indexed_texts = defaultdict(empty_texts(text_fields))
-    images = download_prod_img_data(products)
+    images = download_product_img_data(products)
     for item_id, id_lang, *text_values in flat_texts:
         for field, value in zip(text_fields, text_values):
             indexed_texts[item_id][field][id_lang] = value
@@ -118,8 +120,8 @@ def download_images(categories):
             pass
 
 
-def download_prod_img_data(products):
-    product_images = sql_retrieve_raw('SELECT id_product, id_image FROM ps_image')
+def download_product_img_data(products):
+    product_images = sql_retrieve_raw('SELECT id_product, id_image FROM ps_image order by id_product, position asc')
     product_images_dict = defaultdict(list)
     for id_product, id_image in product_images:
         product_images_dict[id_product].append(id_image)
@@ -127,8 +129,7 @@ def download_prod_img_data(products):
     for product_id in product_images_dict:
         for image_id in product_images_dict[product_id]:
             try:
-                print("here would be the download_product_image, id: %d" , product_id)
-                #download_product_image(pid, image_id)
+                download_product_image(product_id, image_id)
             except:
                 pass
 
@@ -153,6 +154,13 @@ def download_product_image(pid, iid):
         os.makedirs(destination_dir, exist_ok=True)
         with open(destination_path, 'wb') as dest:
             dest.write(src.read())
+
+class DecimalEncoder (json.JSONEncoder):
+    def default (self, obj):
+       if isinstance (obj, Decimal):
+           return int (obj)
+       return json.JSONEncoder.default (self, obj)
+
 
 if __name__ == '__main__':
     main()
