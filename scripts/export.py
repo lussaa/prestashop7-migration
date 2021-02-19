@@ -2,11 +2,15 @@
 
 import os
 import json
+import traceback
 from subprocess import call
 from collections import defaultdict
 import mysql.connector 
 import urllib.request
 from decimal import Decimal
+from progressbar import ProgressBar
+
+
 
 here = os.path.dirname(os.path.realpath(__file__))
 
@@ -112,7 +116,9 @@ def export_products():
 
 
 def download_images(categories):
-    for c in categories:
+    print("Starting download of category images. \n")
+    pbar = ProgressBar()
+    for c in pbar(categories):
         cid = c['id_category']
         try:
             download_category_image(cid)
@@ -125,8 +131,9 @@ def download_product_img_data(products):
     product_images_dict = defaultdict(list)
     for id_product, id_image in product_images:
         product_images_dict[id_product].append(id_image)
-
-    for product_id in product_images_dict:
+    print("Starting download of product images. \n")
+    pbar = ProgressBar()
+    for product_id in pbar(product_images_dict):
         for image_id in product_images_dict[product_id]:
             try:
                 download_product_image(product_id, image_id)
