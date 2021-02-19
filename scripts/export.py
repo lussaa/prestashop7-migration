@@ -234,6 +234,7 @@ def download_product_img_data(max_product_id):
         return product_images_dict
 
     print("Starting download of product images. \n")
+    pbar = ProgressBar()
     for product_id in pbar(product_images_dict):
         for image_id in product_images_dict[product_id]:
             try:
