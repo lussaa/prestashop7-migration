@@ -17,6 +17,16 @@ import mysql.connector
 here = os.path.dirname(os.path.realpath(__file__))
 
 
+"""
+TODO
+ - import orders
+ - import langs
+ - solve question with customers gender/title/roles
+ - currencies ?
+ - order statuses mapping ?
+ - taxes, manufacturers
+ """
+
 args = None
 warnings = []
 errors = []
@@ -188,7 +198,8 @@ def export_products():
         SELECT {item_id_field}, id_lang, {text_fields_list}
         FROM {text_table}""")
     indexed_texts = defaultdict(empty_texts(text_fields))
-    images = download_product_img_data(products)
+    max_product_id = max(int(product['id_product']) for product in products)
+    images = download_product_img_data(max_product_id)
     for item_id, id_lang, *text_values in flat_texts:
         for field, value in zip(text_fields, text_values):
             indexed_texts[item_id][field][id_lang] = value
@@ -209,8 +220,8 @@ def download_images(categories):
             pass
 
 
-def download_product_img_data(products):
-    product_images = sql_retrieve_raw('SELECT id_product, id_image FROM ps_image order by id_product, position asc')
+def download_product_img_data(max_product_id):
+    product_images = sql_retrieve_raw(f'SELECT id_product, id_image FROM ps_image WHERE id_product <= {max_product_id} order by id_product, position asc')
     product_images_dict = defaultdict(list)
     for id_product, id_image in product_images:
         product_images_dict[id_product].append(id_image)
