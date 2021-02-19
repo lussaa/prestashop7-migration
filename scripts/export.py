@@ -3,14 +3,16 @@
 import re
 import os
 import json
+import traceback
 from subprocess import call
 import argparse
 from collections import defaultdict
 import urllib.request
 from decimal import Decimal
-import itertools
-
+from progressbar import ProgressBar
 from validate_email import validate_email
+import mysql.connector
+import itertools
 import mysql.connector 
 
 
@@ -211,7 +213,9 @@ def export_products():
 
 
 def download_images(categories):
-    for c in categories:
+    print("Starting download of category images. \n")
+    pbar = ProgressBar()
+    for c in pbar(categories):
         cid = c['id_category']
         try:
             download_category_image(cid)
@@ -229,7 +233,8 @@ def download_product_img_data(max_product_id):
     if args.skip_images:
         return product_images_dict
 
-    for product_id in product_images_dict:
+    print("Starting download of product images. \n")
+    for product_id in pbar(product_images_dict):
         for image_id in product_images_dict[product_id]:
             try:
                 download_product_image(product_id, image_id)
