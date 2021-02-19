@@ -1,40 +1,89 @@
 #!/usr/bin/env python
 
+import re
 import os
 import json
 from subprocess import call
+import argparse
 from collections import defaultdict
-import mysql.connector 
 import urllib.request
 from decimal import Decimal
+import itertools
+
+from validate_email import validate_email
+import mysql.connector 
+
 
 here = os.path.dirname(os.path.realpath(__file__))
 
 
+args = None
+warnings = []
+errors = []
+
+
 def main():
+    global args
+    parser = argparse.ArgumentParser(description='Export shop data')
+    parser.add_argument('--database', action='store', default='root@localhost:33306/old')
+    parser.add_argument('--skip_images', action='store_true')
+    parser.add_argument('--images_dir', action='store', default='https://www.stickaz.com/img')
+    parser.add_argument('--skip_config', action='store_true')
+    parser.add_argument('--www_root', action='store', default='/run/media/seb/share_seb/old_prestashop_copy/www-root')
+    parser.add_argument('--limit_products', action='store', type=int, default=None)
+    parser.add_argument('--limit_users', action='store', type=int, default=None)
+    args = parser.parse_args()
     run_export()
 
 
+db = None
+
+
+def connect_to_database():
+    global db
+    m = re.match('(.*)@(.*):(.*)/(.*)', args.database)
+    assert m
+    db = mysql.connector.connect(
+        host=m.group(2),
+        port=m.group(3),
+        user=m.group(1),
+        database=m.group(4))
+
+
 def run_export():
-    # export categories
+    connect_to_database()
+    full_model = {
+        'langs': export_langs(),
+        'categories': export_categories(),
+        'products': export_products(),
+        'users': export_users(),
+        'config': {
+            'cookie_key': export_cookie_key(),
+        },
+        'warnings': warnings,
+        'errors': errors,
+    }
+    write_model(full_model)
+
+
+def export_cookie_key():
+    config_file = os.path.join(args.www_root, 'html', 'config', 'settings.inc.php')
+    regex = r"^define\('_COOKIE_KEY_', '(.*)'\);$"
+    with open(config_file) as f:
+        content = f.read()
+    m = re.search(regex, content, re.MULTILINE)
+    assert m
+    return m.group(1)
+
+
+def write_model(full_model):
     destination = os.path.realpath(os.path.join(here, '../www-share/data/model.json'))
-    categories = export_categories()
-    langs = sql_retrieve('SELECT id_lang, iso_code FROM ps_lang')
-    download_images(categories)
-
-    products = export_products()
-
-    full_model = {'langs': langs, 'categories': categories, 'products': products}
     with open(destination, 'wb') as dest:
         j = json.dumps(full_model, indent=4, cls=DecimalEncoder )
         dest.write(j.encode('utf-8'))
 
+
 def sql_retrieve(query):
-    db = mysql.connector.connect(
-        host='localhost',
-        port='33306',
-        user='root',
-        database='old')
     c = db.cursor()
     c.execute(query)
     num_fields = len(c.description)
@@ -44,11 +93,6 @@ def sql_retrieve(query):
 
 
 def sql_retrieve_raw(query):
-    db = mysql.connector.connect(
-        host='localhost',
-        port='33306',
-        user='root',
-        database='old')
     c = db.cursor()
     c.execute(query)
     rows = c.fetchall()
@@ -70,6 +114,10 @@ def empty_texts(fields):
     return create
 
 
+def export_langs():
+    return sql_retrieve('SELECT id_lang, iso_code FROM ps_lang')
+
+
 def export_categories():
     categories = sql_retrieve('SELECT id_category, id_parent FROM ps_category')
     text_fields = ['name', 'description', 'link_rewrite', 'meta_keywords']
@@ -86,11 +134,51 @@ def export_categories():
     for category in categories:
         for field in text_fields:
             category[field] = indexed_texts[category['id_category']][field]
+    if not args.skip_images:
+        download_images(categories)
     return categories
+
+
+def export_users():
+    # ?   case id_gender when 9 then 0 else id_gender end as gender, 
+    users = sql_retrieve('SELECT id_customer, id_gender, firstname, lastname, username, passwd, email, newsletter FROM ps_customer')
+    valid_users = []
+    for user in users:
+        if looks_spammy(user):
+            continue  # Drop user without warning
+        for field in ['lastname', 'firstname']:
+            user[field] = sanitize_name(user[field])
+        if validate_email(user['email']):
+            valid_users.append(user)
+        else:
+            warnings.append(f'Dropped user with invalid email {user["email"]}')
+    return first(args.limit_users, valid_users)
+
+
+def looks_spammy(user):
+    return user['lastname'].startswith('www.')
+
+
+def first(limit, collection):
+    if limit is not None:
+        return list(itertools.islice(collection, limit))
+    else:
+        return collection
+
+
+def sanitize_name(name):
+    name = re.sub(r'[/]', r' ', name)
+    name = re.sub(r'\.\.', r'. .', name)
+    name = re.sub(r'\.([^ ])', r'. \1', name)
+    name = name.strip()
+    if name == '':
+        name = '.'
+    return name
 
 
 def export_products():
     products = sql_retrieve('SELECT id_product, price, id_category_default, active FROM ps_product')
+    products = first(args.limit_products, products)
     text_fields = ['name', 'meta_description', 'link_rewrite', 'meta_keywords']
     img_field = 'image_ids'
     text_fields_list = ', '.join(text_fields)
@@ -116,7 +204,8 @@ def download_images(categories):
         cid = c['id_category']
         try:
             download_category_image(cid)
-        except:
+        except Exception as e:
+            errors.append(str(e))
             pass
 
 
@@ -126,14 +215,17 @@ def download_product_img_data(products):
     for id_product, id_image in product_images:
         product_images_dict[id_product].append(id_image)
 
+    if args.skip_images:
+        return product_images_dict
+
     for product_id in product_images_dict:
         for image_id in product_images_dict[product_id]:
             try:
                 download_product_image(product_id, image_id)
             except:
-                pass
+                traceback.print_exc()
 
-    return product_images_dict;
+    return product_images_dict
 
 
 def download_category_image(cid):
