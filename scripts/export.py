@@ -222,6 +222,7 @@ def download_product_img_data(products):
     if args.skip_images:
         return product_images_dict
 
+    pbar = ProgressBar()
     print("Starting download of product images. \n")
     for product_id in pbar(product_images_dict):
         for image_id in product_images_dict[product_id]:
