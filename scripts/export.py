@@ -13,8 +13,9 @@ from progressbar import ProgressBar
 from validate_email import validate_email
 import mysql.connector
 import itertools
-import mysql.connector 
+import mysql.connector
 from PIL import Image;
+from datetime import datetime
 
 here = os.path.dirname(os.path.realpath(__file__))
 
@@ -73,6 +74,7 @@ def run_export():
         'config': {
             'cookie_key': export_cookie_key(),
         },
+        'tables': export_tables(),
         'warnings': warnings,
         'errors': errors,
     }
@@ -94,7 +96,7 @@ def export_cookie_key():
 def write_model(full_model):
     destination = os.path.realpath(os.path.join(here, '../www-share/data/model.json'))
     with open(destination, 'wb') as dest:
-        j = json.dumps(full_model, indent=4, cls=DecimalEncoder )
+        j = json.dumps(full_model, indent=4, cls=OurJsonEncoder)
         dest.write(j.encode('utf-8'))
 
 
@@ -127,6 +129,24 @@ def empty_texts(fields):
             for f in fields
         }
     return create
+
+
+def export_tables():
+    tables = [
+        'ps_orders',
+        'ps_cart',
+        'ps_address',
+        'ps_currency',
+        'ps_cart_product',
+        'ps_country',
+        'ps_country_lang',
+        'ps_state',
+        'ps_zone',
+    ]
+    return {
+        table: sql_retrieve(f'SELECT * FROM {table}')
+        for table in tables
+    }
 
 
 def export_langs():
@@ -274,11 +294,14 @@ def download_product_image(pid, iid):
         image.save(destination_path);
         print ("Img {0} resized.".format(destination_path));
 
-class DecimalEncoder (json.JSONEncoder):
-    def default (self, obj):
-       if isinstance (obj, Decimal):
-           return int (obj)
-       return json.JSONEncoder.default (self, obj)
+class OurJsonEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return int(obj)
+        elif isinstance(obj, datetime):
+            return str(obj)
+        else:
+            return json.JSONEncoder.default(self, obj)
 
 
 if __name__ == '__main__':
