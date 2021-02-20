@@ -14,7 +14,7 @@ from validate_email import validate_email
 import mysql.connector
 import itertools
 import mysql.connector 
-
+from PIL import Image;
 
 here = os.path.dirname(os.path.realpath(__file__))
 
@@ -44,6 +44,7 @@ def main():
     parser.add_argument('--www_root', action='store', default='/run/media/seb/share_seb/old_prestashop_copy/www-root')
     parser.add_argument('--limit_products', action='store', type=int, default=None)
     parser.add_argument('--limit_users', action='store', type=int, default=None)
+    parser.add_argument('--resize_images',  action='store_true')
     args = parser.parse_args()
     run_export()
 
@@ -79,6 +80,8 @@ def run_export():
 
 
 def export_cookie_key():
+    if args.skip_config:
+        return "mystery"
     config_file = os.path.join(args.www_root, 'html', 'config', 'settings.inc.php')
     regex = r"^define\('_COOKIE_KEY_', '(.*)'\);$"
     with open(config_file) as f:
@@ -201,6 +204,7 @@ def export_products():
         FROM {text_table}""")
     indexed_texts = defaultdict(empty_texts(text_fields))
     max_product_id = max(int(product['id_product']) for product in products)
+
     images = download_product_img_data(max_product_id)
     for item_id, id_lang, *text_values in flat_texts:
         for field, value in zip(text_fields, text_values):
@@ -264,6 +268,11 @@ def download_product_image(pid, iid):
         os.makedirs(destination_dir, exist_ok=True)
         with open(destination_path, 'wb') as dest:
             dest.write(src.read())
+    if args.resize_images:
+        image = Image.open(destination_path);
+        image = image.resize((730,800));
+        image.save(destination_path);
+        print ("Img {0} resized.".format(destination_path));
 
 class DecimalEncoder (json.JSONEncoder):
     def default (self, obj):

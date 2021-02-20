@@ -50,7 +50,6 @@ foreach($users as $user) {
   $c->id_gender = $user->id_gender;
   $c->add();
 
-  echo "Inserted user: " . $c->id . " - " . $c->email . "\n";
   $count++;
 }
 echo "Inserted " . $count . " users\n";

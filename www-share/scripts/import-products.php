@@ -16,7 +16,7 @@ if ($res) {
 
 const EN = 1;
 const FR = 2;
-const IMG_PATH = "/www-scripts/data/img/p/";
+const IMG_PATH = "/www-share/data/img/p/";
 
 echo "Importing\n";
 
@@ -50,7 +50,7 @@ foreach ($raw_products as $raw_product) {
     $p->add();
     $p->addToCategories($raw_product->id_category_default);
 
-    echo "Inserted product: " . $p->id_product . " (name " . $p->name . ")\n";
+    echo "Inserted product: " . $p->id_product . "\n";
 
     // Image addition
 
@@ -77,13 +77,13 @@ foreach ($raw_products as $raw_product) {
             $icontroller = new MyAdminImportController;
 
             if ($icontroller::copyImg($id_product, $image->id, $url, 'products', true)) {
-                echo "Ok for img id -> " .$image_id ."./n";
+                echo "Ok for img id -> " .$image_id .".\n";
             } else {
-                echo " #################### Image check failed for img id -> " .$image_id ."./n";
+                echo " #################### copy image failed for img id -> " .$image_id .".\n";
                 $image->delete();
             }
         } else {
-            echo " #################### Image check failed for img id -> " .$image_id ."./n";
+            echo " #################### Image check failed for img id -> " .$image_id .".\n";
 
         }
 
@@ -107,10 +107,12 @@ function rawproductToProduct($raw_product){
     $p->id_product = $raw_product->id_product;
     $p->id_category_default = $raw_product->id_category_default;
     $p->name = (array)($raw_product->name);
-    $p->description = (array)($raw_product->description);
+    $p->meta_description = (array)($raw_product->meta_description);
     $p->link_rewrite = (array)($raw_product->link_rewrite);
     $p->meta_keywords = (array)($raw_product->meta_keywords);
-
+    $p->price_tin = $raw_product->price;
+    $p->price = $raw_product->price;
+    
     return $p;
 
 }

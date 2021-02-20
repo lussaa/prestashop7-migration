@@ -1,3 +1,4 @@
 mysql-connector-python
 progressbar
 validate_email
+Pillow
