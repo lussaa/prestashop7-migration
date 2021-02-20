@@ -12,3 +12,4 @@ PRESTA_CONTAINER=${HERE_DIR_NAME}_apache_1
 
 docker exec -i -u www-data $PRESTA_CONTAINER php /www-share/scripts/import-categories.php
 docker exec -i -u www-data $PRESTA_CONTAINER php /www-share/scripts/import-users.php
+docker exec -i -u www-data $PRESTA_CONTAINER php /www-share/scripts/import-products.php
