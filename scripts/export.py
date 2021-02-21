@@ -142,6 +142,13 @@ def export_tables():
         'ps_country_lang',
         'ps_state',
         'ps_zone',
+        'ps_attribute_group',
+        'ps_attribute_group_lang',
+        'ps_attribute',
+        'ps_attribute_lang',
+        'ps_product_attribute',
+        'ps_product_attribute_combination'
+
     ]
     return {
         table: sql_retrieve(f'SELECT * FROM {table}')
