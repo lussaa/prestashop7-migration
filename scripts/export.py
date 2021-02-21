@@ -132,12 +132,39 @@ def empty_texts(fields):
 
 
 def export_tables():
+    simple = export_tables_simple()
+    special = {
+        'ps_cart_product': sql_retrieve(cart_product_query)
+    }
+    return {
+        **simple,
+        **special
+    }
+
+
+# De-duplicate rows by merging, as new prestashop has a primary key on these
+cart_product_query = """
+SELECT
+    id_cart,
+    id_product,
+    id_product_attribute,
+    SUM(quantity) as quantity,
+    MAX(date_add) as date_add
+FROM
+    ps_cart_product
+GROUP BY
+    id_cart,
+    id_product,
+    id_product_attribute
+"""
+
+
+def export_tables_simple():
     tables = [
         'ps_orders',
         'ps_cart',
         'ps_address',
         'ps_currency',
-        'ps_cart_product',
         'ps_country',
         'ps_country_lang',
         'ps_state',
@@ -147,8 +174,8 @@ def export_tables():
         'ps_attribute',
         'ps_attribute_lang',
         'ps_product_attribute',
-        'ps_product_attribute_combination'
-
+        'ps_product_attribute_combination',
+        'ps_lang'
     ]
     return {
         table: sql_retrieve(f'SELECT * FROM {table}')
