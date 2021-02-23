@@ -22,6 +22,18 @@ function convert_currency($from) {
   return $converted;
 }
 
+function convert_order($from) {
+  $converted = $from;
+  $converted['reference'] = 'M' . $from['id_order'];
+  return $converted;
+}
+
+function convert_employee($from) {
+  $converted = $from;
+  unset($converted['bo_uimode']);
+  return $converted;
+}
+
 function import_currency_symbols($currencies, $langs) {
   empty_table('ps_currency_lang');
   foreach($langs as $lang) {
@@ -42,7 +54,9 @@ function identity($x) {
 }
 
 $converters = [
-  'ps_currency' => 'convert_currency'
+  'ps_currency' => 'convert_currency',
+  'ps_orders' => 'convert_order',
+  'ps_employee' => 'convert_employee'
 ];
 
 function insert($table, $data) {
@@ -97,6 +111,13 @@ $to_import = [
   'ps_country_lang',
   'ps_state',
   'ps_zone',
+  'ps_order_detail',
+  'ps_order_history',
+  'ps_order_state',
+  'ps_order_state_lang',
+  'ps_employee',
+  'ps_profile',
+  'ps_profile_lang',
 ];
 
 foreach($to_import as $t) {
