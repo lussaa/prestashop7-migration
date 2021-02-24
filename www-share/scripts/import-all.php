@@ -7,10 +7,20 @@ $db = Db::getInstance();
 
 echo "Importing\n";
 
-$input = "/www-share/data/model.json";
+$input = "/www-share/data/model_converted.json";
 $json = file_get_contents($input);
 $obj = json_decode($json, true);
 $tables = $obj['tables'];
+
+
+echo "Importing cookie key (user passwords salt)\n";
+$cookiki = $obj['config']['cookie_key'];
+$config_file = './app/config/parameters.php';
+$config = file_get_contents($config_file);
+$current_cookie_key = _COOKIE_KEY_;
+$config = str_replace($current_cookie_key, $cookiki, $config);
+$res = file_put_contents($config_file, $config);
+
 
 function convert_currency($from) {
   $converted = $from;
@@ -103,10 +113,12 @@ function import_table($table, $rows) {
 }
 
 $to_import = [
+  'ps_lang',
   'ps_orders',
   'ps_cart',
   'ps_address',
   'ps_currency',
+  'ps_customer',
   'ps_cart_product',
   'ps_country',
   'ps_country_lang',

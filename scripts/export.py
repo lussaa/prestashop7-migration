@@ -3,6 +3,7 @@
 import re
 import os
 import json
+from copy import copy
 import traceback
 from subprocess import call
 import argparse
@@ -16,6 +17,8 @@ import itertools
 import mysql.connector
 from PIL import Image;
 from datetime import datetime, date
+from operator import itemgetter
+
 
 here = os.path.dirname(os.path.realpath(__file__))
 
@@ -23,10 +26,7 @@ here = os.path.dirname(os.path.realpath(__file__))
 """
 TODO
  - import orders
- - import langs
  - solve question with customers gender/title/roles
- - currencies ?
- - order statuses mapping ?
  - taxes, manufacturers
  """
 
@@ -42,7 +42,7 @@ def main():
     parser.add_argument('--skip_images', action='store_true')
     parser.add_argument('--images_dir', action='store', default='https://www.stickaz.com/img')
     parser.add_argument('--skip_config', action='store_true')
-    parser.add_argument('--www_root', action='store', default='/run/media/seb/share_seb/old_prestashop_copy/www-root')
+    parser.add_argument('--www_root', action='store', default='./data/original_www_root')
     parser.add_argument('--limit_products', action='store', type=int, default=None)
     parser.add_argument('--limit_users', action='store', type=int, default=None)
     parser.add_argument('--resize_images',  action='store_true')
@@ -66,24 +66,28 @@ def connect_to_database():
 
 def run_export():
     connect_to_database()
-    full_model = {
-        'langs': export_langs(),
+    original_model = {
         'categories': export_categories(),
         'products': export_products(),
-        'users': export_users(),
-        'config': {
-            'cookie_key': export_cookie_key(),
-        },
+        'config': export_config(),
         'tables': export_tables(),
         'warnings': warnings,
         'errors': errors,
     }
-    write_model(full_model)
+    write_model(original_model, 'original')
+    converted_model = convert_model(original_model)
+    write_model(converted_model, 'converted')
+
+
+def export_config():
+    return {
+        'cookie_key': export_cookie_key(),
+    }
 
 
 def export_cookie_key():
     if args.skip_config:
-        return "mystery"
+        return '???'
     config_file = os.path.join(args.www_root, 'html', 'config', 'settings.inc.php')
     regex = r"^define\('_COOKIE_KEY_', '(.*)'\);$"
     with open(config_file) as f:
@@ -93,8 +97,8 @@ def export_cookie_key():
     return m.group(1)
 
 
-def write_model(full_model):
-    destination = os.path.realpath(os.path.join(here, '../www-share/data/model.json'))
+def write_model(full_model, suffix):
+    destination = os.path.realpath(os.path.join(here, f'../www-share/data/model_{suffix}.json'))
     with open(destination, 'wb') as dest:
         j = json.dumps(full_model, indent=4, cls=OurJsonEncoder)
         dest.write(j.encode('utf-8'))
@@ -167,6 +171,7 @@ def export_tables_simple():
         'ps_currency',
         'ps_country',
         'ps_country_lang',
+        'ps_customer',
         'ps_state',
         'ps_zone',
         'ps_attribute_group',
@@ -175,7 +180,7 @@ def export_tables_simple():
         'ps_attribute_lang',
         'ps_product_attribute',
         'ps_product_attribute_combination',
-        'ps_lang'
+        'ps_lang',
         'ps_order_detail',
         'ps_order_state',
         'ps_order_state_lang',
@@ -188,10 +193,6 @@ def export_tables_simple():
         table: sql_retrieve(f'SELECT * FROM {table}')
         for table in tables
     }
-
-
-def export_langs():
-    return sql_retrieve('SELECT id_lang, iso_code FROM ps_lang')
 
 
 def export_categories():
@@ -213,22 +214,6 @@ def export_categories():
     if not args.skip_images:
         download_images(categories)
     return categories
-
-
-def export_users():
-    # ?   case id_gender when 9 then 0 else id_gender end as gender, 
-    users = sql_retrieve('SELECT id_customer, id_gender, firstname, lastname, username, passwd, email, newsletter FROM ps_customer')
-    valid_users = []
-    for user in users:
-        if looks_spammy(user):
-            continue  # Drop user without warning
-        for field in ['lastname', 'firstname']:
-            user[field] = sanitize_name(user[field])
-        if validate_email(user['email']):
-            valid_users.append(user)
-        else:
-            warnings.append(f'Dropped user with invalid email {user["email"]}')
-    return first(args.limit_users, valid_users)
 
 
 def looks_spammy(user):
@@ -345,6 +330,50 @@ class OurJsonEncoder(json.JSONEncoder):
             return str(obj)
         else:
             return json.JSONEncoder.default(self, obj)
+
+
+def convert_model(model):
+    model = copy(model)
+    tables = model['tables']
+    tables['ps_customer'] = convert_customers(tables['ps_customer'])
+    tables['ps_order'] = convert_orders(tables['ps_orders'], tables['ps_order_history'])
+    return model
+
+
+def convert_customers(customers):
+    # ?   case id_gender when 9 then 0 else id_gender end as gender, 
+    valid_users = []
+    for user in customers:
+        if looks_spammy(user):
+            continue  # Drop user without warning
+        for field in ['lastname', 'firstname']:
+            user[field] = sanitize_name(user[field])
+        if validate_email(user['email']):
+            del user['username']
+            valid_users.append(user)
+        else:
+            warnings.append(f'Dropped user with invalid email {user["email"]}')
+    return first(args.limit_users, valid_users)
+
+
+def convert_orders(orders, history):
+    return list(_convert_orders(orders, history))
+
+
+def _convert_orders(orders, history):
+    for order in orders:
+        current_state = most_recent_state(order['id_order'], history)
+        order['current_state'] = current_state
+        yield order
+
+
+def most_recent_state(id_order, history):
+    history_for_this_order = filter(lambda h: h['id_order'] == id_order, history)
+    history_for_this_order = sorted(history_for_this_order, key=itemgetter('date_add'), reverse=True)
+    if history_for_this_order:
+        return history_for_this_order[0]['id_order_state']
+    else:
+        return None
 
 
 if __name__ == '__main__':
