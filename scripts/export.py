@@ -15,7 +15,7 @@ import mysql.connector
 import itertools
 import mysql.connector
 from PIL import Image;
-from datetime import datetime
+from datetime import datetime, date
 
 here = os.path.dirname(os.path.realpath(__file__))
 
@@ -169,13 +169,20 @@ def export_tables_simple():
         'ps_country_lang',
         'ps_state',
         'ps_zone',
-        'ps_lang',
         'ps_attribute_group',
         'ps_attribute_group_lang',
         'ps_attribute',
         'ps_attribute_lang',
         'ps_product_attribute',
-        'ps_product_attribute_combination'
+        'ps_product_attribute_combination',
+        'ps_lang'
+        'ps_order_detail',
+        'ps_order_state',
+        'ps_order_state_lang',
+        'ps_order_history',
+        'ps_employee',
+        'ps_profile',
+        'ps_profile_lang',
     ]
     return {
         table: sql_retrieve(f'SELECT * FROM {table}')
@@ -333,6 +340,8 @@ class OurJsonEncoder(json.JSONEncoder):
         if isinstance(obj, Decimal):
             return int(obj)
         elif isinstance(obj, datetime):
+            return str(obj)
+        elif isinstance(obj, date):
             return str(obj)
         else:
             return json.JSONEncoder.default(self, obj)

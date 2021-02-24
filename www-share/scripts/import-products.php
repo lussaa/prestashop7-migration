@@ -3,6 +3,20 @@
 require_once ('/www-share/scripts/importing_db_tables.php');
 require_once('./config/config.inc.php');
 
+echo "Deleting all products\n";
+
+function delete_products() {
+    $res = Db::getInstance()->executeS('SELECT `id_product` FROM `'._DB_PREFIX_.'product` ');
+
+    if ($res) {
+        foreach ($res as $row) {
+            $x = new Product($row['id_product']);
+            $x->delete();
+        }
+    }
+}
+
+delete_products();
 
 const EN = 1;
 const FR = 2;
@@ -14,19 +28,6 @@ $json = file_get_contents($input);
 $obj = json_decode($json, true);
 $tables = $obj['tables'];
 $db = Db::getInstance();
-
-
-echo "Deleting all products\n";
-
-
-$res = $db->executeS('SELECT `id_product` FROM `'._DB_PREFIX_.'product` ');
-
-if ($res) {
-    foreach ($res as $row) {
-        $x = new Product($row['id_product']);
-        $x->delete();
-    }
-}
 
 
 echo "Importing attributes.\n";
@@ -51,9 +52,7 @@ foreach($to_import as $t) {
 
 
 echo "Importing products. \n";
-
-
-$raw_products = $obj['products'];
+$raw_products = $obj[' products'];
 
 class MyAdminImportController extends AdminImportControllerCore
 {
@@ -71,7 +70,6 @@ class MyAdminImportController extends AdminImportControllerCore
 
 
 foreach ($raw_products as $raw_product) {
-
     // Product creation
     $p = rawproductToProduct($raw_product);
     $id_product = $raw_product['id_product'];
@@ -103,9 +101,8 @@ foreach ($raw_products as $raw_product) {
 
         if (($image->validateFields(true, true)) === true &&
             ($image->validateFieldsLang(true, true)) === true && $image->add()) {
-            $icontroller = new MyAdminImportController;
 
-            if ($icontroller::copyImg($id_product, $image->id, $url, 'products', true)) {
+            if (MyAdminImportController::copyImg($id_product, $image->id, $url, 'products', true)) {
                 echo "Ok for img id -> " .$image_id .".\n";
             } else {
                 echo " #################### copy image failed for img id -> " .$image_id .".\n";
