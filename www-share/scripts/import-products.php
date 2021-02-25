@@ -52,7 +52,7 @@ foreach($to_import as $t) {
 
 
 echo "Importing products. \n";
-$raw_products = $obj[' products'];
+$raw_products = $obj['products'];
 
 class MyAdminImportController extends AdminImportControllerCore
 {

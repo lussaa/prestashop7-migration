@@ -55,19 +55,45 @@
     }
 
 
-     function insert($table, $data, $null_values = false) {
+    function insert($table, $data, $null_values = false) {
         global $db;
         if ($table === 'ps_attribute'){
              $null_values = false;
+             $res = $db->insert($table, $data, $null_values, false, Db::INSERT, false);
+        } else {
+            $res = insert_as_is($table, [$data]);
         }
-        $res = $db->insert($table, $data, $null_values, false, Db::INSERT, false);
         if (!$res) {
             print_r($data);
             die("Insert into " . $table . " failed: " . $db->getMsgError() . "\n");
         }
     }
 
-     function empty_table($table) {
+    function insert_as_is($table, $data) {
+        $keys = [];
+        $values_stringified = [];
+        $first_loop = true;
+        foreach ($data as $row_data) {
+            $values = [];
+            foreach ($row_data as $key => $value) {
+                if ($first_loop) {
+                    $keys[] = '`' . bqSQL($key) . '`';
+                }
+                $values[] = (null === $value) ? 'NULL' : "'{$value}'";
+            }
+            $first_loop = false;
+            $values_stringified[] = '(' . implode(', ', $values) . ')';
+        }
+        $keys_stringified = implode(', ', $keys);
+
+        $sql = 'INSERT INTO `' . $table . '` (' . $keys_stringified . ') VALUES ' . implode(', ', $values_stringified);
+
+        global $db;
+        $res = $db->query($sql);
+        return $res;
+    }
+
+    function empty_table($table) {
         global $db;
         echo "Deletion of contents of " .$table ."\n";
         $res = $db->delete($table, '', 0, false, false);
@@ -78,7 +104,13 @@
 
      function escape($row) {
         return array_map(
-            function($value) { return pSQL($value); },
+            function($value) {
+                if (is_array($value)) {
+                    return $value;
+                } else {
+                    return pSQL($value);
+                }
+            },
             $row
         );
     }
