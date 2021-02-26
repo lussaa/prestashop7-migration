@@ -16,7 +16,7 @@ function delete_products() {
     }
 }
 
-delete_products();
+//delete_products();
 
 const EN = 1;
 const FR = 2;
@@ -42,17 +42,43 @@ $to_import = [
 ];
 
 
+function add_group_type($row){
+    $row['group_type'] = 'radio';
+}
+
+function add_special_presta7_shop_tables($tables, $table_to_insert = 'ps_attribute_group_shop', $id_name = 'id_attribute_group', $for_each_table_source_of_key = 'ps_attribute_group'){
+    empty_table($table_to_insert);
+
+    $rows_keys = $tables[$for_each_table_source_of_key];
+    $id_shop = 1;
+    $count = 0;
+    foreach ($rows_keys as $row){ //foreach id_attribute_group
+        $escaped = escape(array($id_name => $row[$id_name], "id_shop" => $id_shop));
+        insert($table_to_insert, $escaped, true);
+        $count++;
+    }
+    echo "Inserted " .$count ." rows in " .$table_to_insert ."\n";
+
+}
+
+
 $converters = [
     'ps_product_attribute' => 'convert_default_on_zero',
-    'ps_product_attribute_combination' => 'delete_non_existing_column'
+    'ps_product_attribute_combination' => 'delete_non_existing_column',
+    'ps_attribute_group' => 'add_group_type'
 ];
+
+
 foreach($to_import as $t) {
     import_table($t, $tables[$t]);
 }
 
+add_special_presta7_shop_tables($tables,'ps_attribute_shop', 'id_attribute', 'ps_attribute' );
+add_special_presta7_shop_tables($tables,'ps_attribute_group_shop','id_attribute_group', 'ps_attribute_group');
+
 
 echo "Importing products. \n";
-$raw_products = $obj[' products'];
+$raw_products = $obj['products'];
 
 class MyAdminImportController extends AdminImportControllerCore
 {

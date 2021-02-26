@@ -6,7 +6,7 @@
  * Time: 12:26 PM
  */
 
-
+    CONST duplicate_key_error = 1062;
      function convert_currency($from) {
         $converted = $from;
         $converted['numeric_iso_code'] = $from['iso_code_num'];
@@ -17,6 +17,7 @@
         unset($converted['decimals']);
         return $converted;
     }
+
 
     function convert_default_on_zero($row){
 
@@ -63,7 +64,11 @@
         $res = $db->insert($table, $data, $null_values, false, Db::INSERT, false);
         if (!$res) {
             print_r($data);
-            die("Insert into " . $table . " failed: " . $db->getMsgError() . "\n");
+            if($db->getNumberError() != duplicate_key_error){
+                echo "Duplicate key error for " .$table ."\n" .$db->getMsgError() ."\n";
+            }else {
+                die("Insert into " . $table . " failed: " . $db->getMsgError() ."number error:  " .$db->getNumberError(). "\n");
+            }
         }
     }
 
@@ -105,4 +110,6 @@
         }
         echo "Inserted " . $count . " rows into " . $table . "\n";
     }
+
+
 
