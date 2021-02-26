@@ -22,6 +22,17 @@ $config = str_replace($current_cookie_key, $cookiki, $config);
 $res = file_put_contents($config_file, $config);
 
 
+function convert_order($from) {
+  $converted = $from;
+  $converted['reference'] = 'M' . $from['id_order'];
+  return $converted;
+}
+
+function convert_employee($from) {
+  $converted = $from;
+  unset($converted['bo_uimode']);
+  return $converted;
+}
 
 $converters = [
   'ps_currency' => 'convert_currency',
@@ -30,6 +41,7 @@ $converters = [
 ];
 
 
+// TODO use DB_PREFIX
 $to_import = [
   'ps_lang',
   'ps_orders',
@@ -49,6 +61,9 @@ $to_import = [
   'ps_employee',
   'ps_profile',
   'ps_profile_lang',
+  'ps_category',
+  'ps_category_group',
+  'ps_category_lang',
 ];
 
 foreach($to_import as $t) {

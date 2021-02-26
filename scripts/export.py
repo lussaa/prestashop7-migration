@@ -188,6 +188,13 @@ def export_tables_simple():
         'ps_employee',
         'ps_profile',
         'ps_profile_lang',
+        'ps_category',
+        'ps_category_group',
+        'ps_category_lang',
+        'ps_category_product',
+        'ps_image',
+        'ps_image_type',
+        'ps_image_lang',
     ]
     return {
         table: sql_retrieve(f'SELECT * FROM {table}')
@@ -337,6 +344,7 @@ def convert_model(model):
     tables = model['tables']
     tables['ps_customer'] = convert_customers(tables['ps_customer'])
     tables['ps_order'] = convert_orders(tables['ps_orders'], tables['ps_order_history'])
+    #tables['ps_cart'] = convert_cart(tables['ps_cart'])
     return model
 
 
@@ -364,6 +372,12 @@ def _convert_orders(orders, history):
     for order in orders:
         current_state = most_recent_state(order['id_order'], history)
         order['current_state'] = current_state
+        if order['delivery_date'] is None:
+            # Column is NOT NULL but some rows have NULL in the database somehow
+            order['delivery_date'] = '1970-01-01 00:00:00'
+        if order['invoice_date'] is None:
+            # Column is NOT NULL but some rows have NULL in the database somehow
+            order['invoice_date'] = '1970-01-01 00:00:00'
         yield order
 
 
@@ -375,6 +389,13 @@ def most_recent_state(id_order, history):
     else:
         return None
 
+
+def convert_cart(carts):
+    carts = copy(carts)
+    for cart in carts:
+        if cart['secure_key'] == '':
+            cart['secure_key'] = {'type': 'sql', 'value': "''"}
+    return carts
 
 if __name__ == '__main__':
     main()
