@@ -18,18 +18,55 @@
         return $converted;
     }
 
+    function add_special_presta7_shop_tables($tables, $table_to_insert = 'ps_attribute_group_shop', $id_name = 'id_attribute_group', $source_table = 'ps_attribute_group',
+                                             $additional_columns_to_copy = NULL){
+        empty_table($table_to_insert);
+
+        $rows_source = $tables[$source_table];
+        $id_shop = 1;
+        $count = 0;
+        foreach ($rows_source as $row_source){ //foreach id_attribute_group
+            if ($additional_columns_to_copy === NULL){
+                $escaped = escape(array($id_name => $row_source[$id_name], "id_shop" => $id_shop));
+            }else{
+                $row_to_insert= array($id_name => $row_source[$id_name], "id_shop" => $id_shop, );
+                foreach ($additional_columns_to_copy as $column){
+                    $row_to_insert[$column] = $row_source[$column];
+                    if ($column ===  "default_on") { $row_to_insert = convert_default_on_zero($row_to_insert); }
+                }
+                $escaped = escape($row_to_insert);
+            }
+
+            insert($table_to_insert, $escaped, true);
+            $count++;
+        }
+        echo "Inserted " .$count ." rows in " .$table_to_insert ."\n";
+    }
+
+    function add_group_type($row){
+        $row['group_type'] = "radio";
+        $row['position'] = 0;
+        return $row;
+    }
+
 
     function convert_default_on_zero($row){
 
-         if ($row['id_product'] === 991 && $row['id_product_attribute']>4792){
-             return NULL;
-         }
          if ($row['default_on'] === 0 ){
             $row['default_on'] = NULL;
          }
          return $row;
 
     }
+    function color_not_null_because_it_is_size($row){
+
+        if ($row['color'] === NULL ){
+            $row['color'] = '';
+        }
+        return $row;
+
+    }
+
 
      function delete_non_existing_column($row){
          unset($row['stickaz_qty']);
@@ -58,15 +95,10 @@
 
     function insert($table, $data, $null_values = false) {
         global $db;
-        if ($table === 'ps_attribute'){
-             $null_values = false;
-             $res = $db->insert($table, $data, $null_values, false, Db::INSERT, false);
-        } else {
-            $res = insert_as_is($table, [$data]);
-        }
+        $res = insert_as_is($table, [$data]);
         if (!$res) {
             print_r($data);
-            if($db->getNumberError() != duplicate_key_error){
+            if($db->getNumberError() === duplicate_key_error){
                 echo "Duplicate key error for " .$table ."\n" .$db->getMsgError() ."\n";
             }else {
                 die("Insert into " . $table . " failed: " . $db->getMsgError() ."number error:  " .$db->getNumberError(). "\n");
@@ -100,11 +132,12 @@
 
     function empty_table($table) {
         global $db;
-        echo "Deletion of contents of " .$table ."\n";
+        echo "Deletion of contents ooooof " .$table ."\n";
         $res = $db->delete($table, '', 0, false, false);
         if (!$res) {
             die("Delete of " . $table . " failed: " . $db->getMsgError() . "\n");
         }
+        echo "Deletion of contents of " .$table ." finished. \n";
     }
 
      function escape($row) {
@@ -112,7 +145,10 @@
             function($value) {
                 if (is_array($value)) {
                     return $value;
-                } else {
+                } elseif (is_null($value)){
+                    return $value;
+                }
+                else {
                     return pSQL($value);
                 }
             },

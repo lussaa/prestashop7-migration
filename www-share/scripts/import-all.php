@@ -2,15 +2,21 @@
 
 require_once('./config/config.inc.php');
 require_once ('/www-share/scripts/importing_db_tables.php');
+require_once ('/www-share/scripts/import-products.php');
 
 $db = Db::getInstance();
-
-echo "Importing\n";
-
 $input = "/www-share/data/model_converted.json";
 $json = file_get_contents($input);
 $obj = json_decode($json, true);
 $tables = $obj['tables'];
+
+
+echo "Deleting all products\n";
+
+delete_products();
+
+echo "Importing...\n";
+
 
 
 echo "Importing cookie key (user passwords salt)\n";
@@ -37,7 +43,11 @@ function convert_employee($from) {
 $converters = [
   'ps_currency' => 'convert_currency',
   'ps_orders' => 'convert_order',
-  'ps_employee' => 'convert_employee'
+  'ps_employee' => 'convert_employee',
+   'ps_product_attribute' => 'convert_default_on_zero',
+   'ps_product_attribute_combination' => 'delete_non_existing_column',
+   'ps_attribute_group' => 'add_group_type',
+    'ps_attribute' => 'color_not_null_because_it_is_size'
 ];
 
 
@@ -64,6 +74,12 @@ $to_import = [
   'ps_category',
   'ps_category_group',
   'ps_category_lang',
+  'ps_attribute_group',
+  'ps_attribute_group_lang',
+  'ps_attribute',
+  'ps_attribute_lang',
+  'ps_product_attribute',
+  'ps_product_attribute_combination'
 ];
 
 foreach($to_import as $t) {
@@ -72,8 +88,23 @@ foreach($to_import as $t) {
 
 import_currency_symbols($tables['ps_currency'], $tables['ps_lang']);
 
-echo "Done\n";
+add_special_presta7_shop_tables($tables,'ps_attribute_shop', 'id_attribute', 'ps_attribute' );
+add_special_presta7_shop_tables($tables,'ps_attribute_group_shop','id_attribute_group', 'ps_attribute_group');
+add_special_presta7_shop_tables($tables,'ps_product_attribute_shop','id_product_attribute', 'ps_product_attribute',
+    array("id_product", "price", "ecotax", "wholesale_price", "weight", "unit_price_impact", "minimal_quantity", "default_on"));
 
+
+echo "Done with attributes and combinations. \n";
+echo "Importing products.\n";
+
+
+
+echo "Importing products. \n";
+$raw_products = $obj['products'];
+
+import_products($raw_products);
+
+echo "Done\n";
 
 ?>
 
