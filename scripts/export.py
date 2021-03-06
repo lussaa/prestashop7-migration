@@ -34,6 +34,11 @@ args = None
 warnings = []
 errors = []
 
+color_ids = []
+size_ids = []
+
+next_id_product_attribute = None
+list_of_proucts_with_customization = []
 
 def main():
     global args
@@ -195,6 +200,9 @@ def export_tables_simple():
         'ps_image',
         'ps_image_type',
         'ps_image_lang',
+        'ps_customization_field',
+        'ps_customization',
+        'ps_customization_field_lang'
     ]
     return {
         table: sql_retrieve(f'SELECT * FROM {table}')
@@ -330,7 +338,7 @@ def download_product_image(pid, iid):
 class OurJsonEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Decimal):
-            return int(obj)
+            return float(obj)
         elif isinstance(obj, datetime):
             return str(obj)
         elif isinstance(obj, date):
@@ -344,6 +352,7 @@ def convert_model(model):
     tables = model['tables']
     tables['ps_customer'] = convert_customers(tables['ps_customer'])
     tables['ps_order'] = convert_orders(tables['ps_orders'], tables['ps_order_history'])
+    tables['ps_product_attribute'], tables['ps_product_attribute_combination'] = convert_ps_customiztion_to_attributes(tables['ps_customization'], tables['ps_product_attribute'], tables['ps_attribute'], tables['ps_product_attribute_combination'])
     #tables['ps_cart'] = convert_cart(tables['ps_cart'])
     return model
 
@@ -379,6 +388,63 @@ def _convert_orders(orders, history):
             # Column is NOT NULL but some rows have NULL in the database somehow
             order['invoice_date'] = '1970-01-01 00:00:00'
         yield order
+
+def get_max_id_product_attribute(ps_product_attribute):
+    ids = [a['id_product_attribute'] for a in ps_product_attribute]
+    return max(ids)
+
+def  _list_of_proucts_with_customization(table_customizations):
+    global list_of_proucts_with_customization
+    if list_of_proucts_with_customization == []:
+        return [customization['id_product'] for customization in table_customizations]
+    return list_of_proucts_with_customization
+
+def  delete_cutomized_products_from_tables(table_ps_product_attribute, table_product_attribute_combination , table_customizations):
+    global list_of_proucts_with_customization
+    list_of_proucts_with_customization = _list_of_proucts_with_customization(table_customizations)
+    new_table_product_attribute = [row for row in table_ps_product_attribute if row['id_product'] not in list_of_proucts_with_customization]
+    id_product_attributes_to_keep  = [ row['id_product_attribute'] for row in new_table_product_attribute ]
+    new_table_product_attribute_combination = [row for row in table_product_attribute_combination if row['id_product_attribute'] in id_product_attributes_to_keep]
+    return new_table_product_attribute, new_table_product_attribute_combination
+
+def convert_ps_customiztion_to_attributes(customizations, ps_product_attribute, ps_attribute, product_attribute_combination):
+    ps_product_attribute, product_attribute_combination = delete_cutomized_products_from_tables(ps_product_attribute, product_attribute_combination, customizations)
+
+    for id_product in list_of_proucts_with_customization:
+        id_product_attribute = get_max_id_product_attribute(ps_product_attribute)
+
+        for size in size_attributes(ps_attribute):
+            id_product_attribute = id_product_attribute + 1
+            for color in color_attributes(ps_attribute):
+                ps_product_attribute.append( {'id_product_attribute': id_product_attribute, 'id_product': id_product, 'wholesale_price':0, 'price': 0, 'ecotax': 0, 'quantity': 0, 'weight': 0, 'unit_price_impact':0, 'minimal_quantity':0} )
+
+                product_attribute_combination.append( { 'id_product_attribute': id_product_attribute, 'id_attribute': color  } )
+                product_attribute_combination.append( { 'id_product_attribute': id_product_attribute, 'id_attribute': size  } )
+    return ps_product_attribute, product_attribute_combination
+
+
+def generate_size_and_color_attribute_list(ps_attribute):
+    for row in ps_attribute:
+        if(row['color'] is None or ''):
+            size_ids.append(row['id_attribute'])
+        else:
+            color_ids.append(row['id_attribute'])
+
+def size_attributes(ps_attribute):
+    global size_ids
+    if (size_ids is None or size_ids == []):
+        generate_size_and_color_attribute_list(ps_attribute)
+        return size_ids
+    else:
+        return size_ids
+
+def color_attributes(ps_attribute):
+    if (color_ids is None):
+        generate_size_and_color_attribute_list(ps_attribute)
+        return color_ids
+    else:
+        return color_ids
+
 
 
 def most_recent_state(id_order, history):
