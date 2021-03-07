@@ -414,10 +414,9 @@ def convert_ps_customiztion_to_attributes(customizations, ps_product_attribute, 
         id_product_attribute = get_max_id_product_attribute(ps_product_attribute)
 
         for size in size_attributes(ps_attribute):
-            id_product_attribute = id_product_attribute + 1
             for color in color_attributes(ps_attribute):
-                ps_product_attribute.append( {'id_product_attribute': id_product_attribute, 'id_product': id_product, 'wholesale_price':0, 'price': 0, 'ecotax': 0, 'quantity': 0, 'weight': 0, 'unit_price_impact':0, 'minimal_quantity':0} )
-
+                id_product_attribute = id_product_attribute + 1
+                ps_product_attribute.append( {'id_product_attribute': id_product_attribute, 'id_product': id_product, 'wholesale_price':0, 'price': 0, 'ecotax': 0, 'quantity': 0, 'weight': 0, 'unit_price_impact':0, 'default_on': None, 'minimal_quantity':0} )
                 product_attribute_combination.append( { 'id_product_attribute': id_product_attribute, 'id_attribute': color  } )
                 product_attribute_combination.append( { 'id_product_attribute': id_product_attribute, 'id_attribute': size  } )
     return ps_product_attribute, product_attribute_combination
