@@ -435,8 +435,8 @@ def convert_ps_customiztion_to_attributes(customizations, ps_product_attribute, 
         id_product_attribute = get_max_id_product_attribute(ps_product_attribute)
 
         for size in size_attributes(ps_attribute):
-            id_product_attribute = id_product_attribute + 1
             for color in color_attributes(ps_attribute):
+                id_product_attribute = id_product_attribute + 1
                 ps_product_attribute.append({
                     'id_product_attribute': id_product_attribute,
                     'id_product': id_product,
@@ -459,9 +459,9 @@ def convert_ps_customiztion_to_attributes(customizations, ps_product_attribute, 
                     'unit_price_impact':0,
                     'minimal_quantity':0
                 })
-
                 product_attribute_combination.append( { 'id_product_attribute': id_product_attribute, 'id_attribute': color, 'stickaz_qty': None } )
                 product_attribute_combination.append( { 'id_product_attribute': id_product_attribute, 'id_attribute': size, 'stickaz_qty': None } )
+
     return ps_product_attribute, product_attribute_combination
 
 
