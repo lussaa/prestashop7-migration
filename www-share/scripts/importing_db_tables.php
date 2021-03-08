@@ -13,14 +13,17 @@
                                              $additional_columns_to_copy = NULL){
         empty_table($table_to_insert);
 
-        $rows_source = $tables[$source_table];
+        $source_columns = $tables[$source_table]['columns'];
+        $rows_source = $tables[$source_table]['rows'];
         $id_shop = 1;
         $count = 0;
-        foreach ($rows_source as $row_source){ //foreach id_attribute_group
+        foreach ($rows_source as $row_source_array){ //foreach id_attribute_group
+            $row_source = zip($row_source_array, $source_columns);
+            $source_id_value = $row_source[$id_name];
             if ($additional_columns_to_copy === NULL){
-                $escaped = escape(array($id_name => $row_source[$id_name], "id_shop" => $id_shop));
+                $escaped = escape(array($id_name => $source_id_value, "id_shop" => $id_shop));
             }else{
-                $row_to_insert= array($id_name => $row_source[$id_name], "id_shop" => $id_shop, );
+                $row_to_insert= array($id_name => $source_id_value, "id_shop" => $id_shop, );
                 foreach ($additional_columns_to_copy as $column){
                     $row_to_insert[$column] = $row_source[$column];
                     if ($column ===  "default_on") { $row_to_insert = convert_default_on_zero($row_to_insert); }

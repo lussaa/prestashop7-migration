@@ -203,6 +203,7 @@ def export_tables_simple():
         'ps_attribute_group_lang',
         'ps_attribute',
         'ps_attribute_lang',
+        'ps_product',
         'ps_product_attribute',
         'ps_product_attribute_combination',
         'ps_lang',
@@ -374,8 +375,9 @@ def convert_model(model):
     tables['ps_currency'], tables['ps_currency_lang'] = convert_currencies(tables['ps_currency'], tables['ps_lang'])
     tables['ps_employee'] = convert_employees(tables['ps_employee'])
     tables['ps_order'] = convert_orders(tables['ps_orders'], tables['ps_order_history'])
-    tables['ps_product_attribute'], tables['ps_product_attribute_combination'] = \
+    tables['ps_product'], tables['ps_product_attribute'], tables['ps_product_attribute_combination'] = \
         convert_ps_customiztion_to_attributes(
+            tables['ps_product'],
             tables['ps_customization'],
             tables['ps_product_attribute'],
             tables['ps_attribute'],
@@ -450,17 +452,24 @@ def get_max_id_product_attribute(ps_product_attribute):
     return max(ids)
 
 
-def  delete_cutomized_products_from_tables(table_ps_product_attribute, table_product_attribute_combination , table_customizations):
+def  delete_cutomized_products_from_tables(product_ids_to_keep, table_ps_product_attribute, table_product_attribute_combination , table_customizations):
     customized_product_ids = {customization['id_product'] for customization in table_customizations}
-    new_table_product_attribute = [row for row in table_ps_product_attribute if row['id_product'] not in customized_product_ids]
+    new_table_product_attribute = [
+        row for row in table_ps_product_attribute
+        if row['id_product'] not in customized_product_ids and row['id_product'] in product_ids_to_keep
+    ]
     id_product_attributes_to_keep  = {row['id_product_attribute'] for row in new_table_product_attribute}
     new_table_product_attribute_combination = [row for row in table_product_attribute_combination if row['id_product_attribute'] in id_product_attributes_to_keep]
     return new_table_product_attribute, new_table_product_attribute_combination, customized_product_ids
 
 
-def convert_ps_customiztion_to_attributes(customizations, ps_product_attribute, ps_attribute, product_attribute_combination):
+def convert_ps_customiztion_to_attributes(products, customizations, ps_product_attribute, ps_attribute, product_attribute_combination):
+
+    products_to_keep = first(args.limit_products, products)
+    product_ids_to_keep = {p['id_product'] for p in products_to_keep}
+
     ps_product_attribute, product_attribute_combination, customized_product_ids = \
-        delete_cutomized_products_from_tables(ps_product_attribute, product_attribute_combination, customizations)
+        delete_cutomized_products_from_tables(product_ids_to_keep, ps_product_attribute, product_attribute_combination, customizations)
 
     for id_product in customized_product_ids:
         id_product_attribute = get_max_id_product_attribute(ps_product_attribute)
@@ -496,8 +505,8 @@ def convert_ps_customiztion_to_attributes(customizations, ps_product_attribute, 
         if 'stickaz_qty' in pac:
             del pac['stickaz_qty']
     # product 991 has dupes
-    ps_product_attribute = [pa for pa in ps_product_attribute if pa['id_product'] != 991 or pa['id_product_attribute'] < 4793]
-    return ps_product_attribute, product_attribute_combination
+    ps_product_attribute = [pa for pa in ps_product_attribute if (pa['id_product'] != 991 or pa['id_product_attribute'] < 4793) and pa['id_product'] in product_ids_to_keep]
+    return products_to_keep, ps_product_attribute, product_attribute_combination
 
 
 def generate_size_and_color_attribute_list(ps_attribute):
