@@ -3,7 +3,7 @@
 import re
 import os
 import json
-from copy import copy
+from copy import copy, deepcopy
 import traceback
 from subprocess import call
 import argparse
@@ -38,7 +38,7 @@ color_ids = []
 size_ids = []
 
 next_id_product_attribute = None
-list_of_proucts_with_customization = []
+
 
 def main():
     global args
@@ -103,11 +103,31 @@ def export_cookie_key():
 
 
 def write_model(full_model, suffix):
+    to_write = deepcopy(full_model)
+    for name, table in to_write['tables'].items():
+        to_write['tables'][name] = factorize_columns(table)
     destination = os.path.realpath(os.path.join(here, f'../www-share/data/model_{suffix}.json'))
     with open(destination, 'wb') as dest:
-        j = json.dumps(full_model, indent=4, cls=OurJsonEncoder)
+        j = json.dumps(to_write, indent=4, cls=OurJsonEncoder)
         dest.write(j.encode('utf-8'))
 
+def factorize_columns(table):
+    columns = list(table[0].keys())
+    rows = [destructure(row, columns) for row in table]
+    return {
+        'columns': columns,
+        'rows': rows,
+    }
+
+
+def destructure(row_dict, columns):
+    try:
+        return [row_dict[c] for c in columns]
+    except KeyError as e:
+        print(e)
+        print(row_dict)
+        print(columns)
+        raise
 
 def sql_retrieve(query):
     c = db.cursor()
@@ -352,7 +372,12 @@ def convert_model(model):
     tables = model['tables']
     tables['ps_customer'] = convert_customers(tables['ps_customer'])
     tables['ps_order'] = convert_orders(tables['ps_orders'], tables['ps_order_history'])
-    tables['ps_product_attribute'], tables['ps_product_attribute_combination'] = convert_ps_customiztion_to_attributes(tables['ps_customization'], tables['ps_product_attribute'], tables['ps_attribute'], tables['ps_product_attribute_combination'])
+    tables['ps_product_attribute'], tables['ps_product_attribute_combination'] = \
+        convert_ps_customiztion_to_attributes(
+            tables['ps_customization'],
+            tables['ps_product_attribute'],
+            tables['ps_attribute'],
+            tables['ps_product_attribute_combination'])
     #tables['ps_cart'] = convert_cart(tables['ps_cart'])
     return model
 
@@ -393,33 +418,50 @@ def get_max_id_product_attribute(ps_product_attribute):
     ids = [a['id_product_attribute'] for a in ps_product_attribute]
     return max(ids)
 
-def  _list_of_proucts_with_customization(table_customizations):
-    global list_of_proucts_with_customization
-    if list_of_proucts_with_customization == []:
-        return [customization['id_product'] for customization in table_customizations]
-    return list_of_proucts_with_customization
 
 def  delete_cutomized_products_from_tables(table_ps_product_attribute, table_product_attribute_combination , table_customizations):
-    global list_of_proucts_with_customization
-    list_of_proucts_with_customization = _list_of_proucts_with_customization(table_customizations)
-    new_table_product_attribute = [row for row in table_ps_product_attribute if row['id_product'] not in list_of_proucts_with_customization]
-    id_product_attributes_to_keep  = [ row['id_product_attribute'] for row in new_table_product_attribute ]
+    customized_product_ids = {customization['id_product'] for customization in table_customizations}
+    new_table_product_attribute = [row for row in table_ps_product_attribute if row['id_product'] not in customized_product_ids]
+    id_product_attributes_to_keep  = {row['id_product_attribute'] for row in new_table_product_attribute}
     new_table_product_attribute_combination = [row for row in table_product_attribute_combination if row['id_product_attribute'] in id_product_attributes_to_keep]
-    return new_table_product_attribute, new_table_product_attribute_combination
+    return new_table_product_attribute, new_table_product_attribute_combination, customized_product_ids
+
 
 def convert_ps_customiztion_to_attributes(customizations, ps_product_attribute, ps_attribute, product_attribute_combination):
-    ps_product_attribute, product_attribute_combination = delete_cutomized_products_from_tables(ps_product_attribute, product_attribute_combination, customizations)
+    ps_product_attribute, product_attribute_combination, customized_product_ids = \
+        delete_cutomized_products_from_tables(ps_product_attribute, product_attribute_combination, customizations)
 
-    for id_product in list_of_proucts_with_customization:
+    for id_product in customized_product_ids:
         id_product_attribute = get_max_id_product_attribute(ps_product_attribute)
 
         for size in size_attributes(ps_attribute):
             id_product_attribute = id_product_attribute + 1
             for color in color_attributes(ps_attribute):
-                ps_product_attribute.append( {'id_product_attribute': id_product_attribute, 'id_product': id_product, 'wholesale_price':0, 'price': 0, 'ecotax': 0, 'quantity': 0, 'weight': 0, 'unit_price_impact':0, 'minimal_quantity':0} )
+                ps_product_attribute.append({
+                    'id_product_attribute': id_product_attribute,
+                    'id_product': id_product,
+                    'reference': None,
+                    'supplier_reference': None,
+                    'location': None,
+                    'ean13': None,
+                    'isbn': None,
+                    'upc': None,
+                    'mpn': None,
+                    'default_on': None,
+                    'low_stock_threshold': None,
+                    'low_stock_alert': None,
+                    'available_date': None,
+                    'wholesale_price':0,
+                    'price': 0,
+                    'ecotax': 0,
+                    'quantity': 0,
+                    'weight': 0,
+                    'unit_price_impact':0,
+                    'minimal_quantity':0
+                })
 
-                product_attribute_combination.append( { 'id_product_attribute': id_product_attribute, 'id_attribute': color  } )
-                product_attribute_combination.append( { 'id_product_attribute': id_product_attribute, 'id_attribute': size  } )
+                product_attribute_combination.append( { 'id_product_attribute': id_product_attribute, 'id_attribute': color, 'stickaz_qty': None } )
+                product_attribute_combination.append( { 'id_product_attribute': id_product_attribute, 'id_attribute': size, 'stickaz_qty': None } )
     return ps_product_attribute, product_attribute_combination
 
 
