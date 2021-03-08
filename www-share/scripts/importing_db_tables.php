@@ -7,17 +7,8 @@
  */
 
     CONST duplicate_key_error = 1062;
-     function convert_currency($from) {
-        $converted = $from;
-        $converted['numeric_iso_code'] = $from['iso_code_num'];
-        unset($converted['iso_code_num']);
-        unset($converted['sign']);
-        unset($converted['blank']);
-        unset($converted['format']);
-        unset($converted['decimals']);
-        return $converted;
-    }
 
+    
     function add_special_presta7_shop_tables($tables, $table_to_insert = 'ps_attribute_group_shop', $id_name = 'id_attribute_group', $source_table = 'ps_attribute_group',
                                              $additional_columns_to_copy = NULL){
         empty_table($table_to_insert);
@@ -72,21 +63,6 @@
          unset($row['stickaz_qty']);
          return $row;
      }
-
-     function import_currency_symbols($currencies, $langs) {
-        empty_table('ps_currency_lang');
-        foreach($langs as $lang) {
-            foreach($currencies as $currency) {
-                $data = [
-                    'id_currency' => $currency['id_currency'],
-                    'id_lang' => $lang['id_lang'],
-                    'name' => $currency['name'],
-                    'symbol' => $currency['sign']
-                ];
-                insert('ps_currency_lang', $data);
-            }
-        }
-    }
 
      function identity($x) {
         return $x;
@@ -228,7 +204,7 @@
         global $db;
         $res = $db->query($sql);
         if (!$res) {
-            print_r($data);
+            print_r($rows);
             if($db->getNumberError() === duplicate_key_error){
                 echo "Duplicate key error for " .$table_name ."\n" .$db->getMsgError() ."\n";
             }else {

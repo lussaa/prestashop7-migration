@@ -371,7 +371,7 @@ def convert_model(model):
     model = copy(model)
     tables = model['tables']
     tables['ps_customer'] = convert_customers(tables['ps_customer'])
-    tables['ps_currency'] = convert_currencies(tables['ps_currency'])
+    tables['ps_currency'], tables['ps_currency_lang'] = convert_currencies(tables['ps_currency'], tables['ps_lang'])
     tables['ps_employee'] = convert_employees(tables['ps_employee'])
     tables['ps_order'] = convert_orders(tables['ps_orders'], tables['ps_order_history'])
     tables['ps_product_attribute'], tables['ps_product_attribute_combination'] = \
@@ -401,16 +401,24 @@ def convert_customers(customers):
 
 
 
-def convert_currencies(currencies):
-    converted = copy(currencies)
-    for c in converted:
+def convert_currencies(currencies, langs):
+    converted_currencies = copy(currencies)
+    currency_lang = []
+    for c in converted_currencies:
+        for lang in langs:
+            currency_lang.append({
+                'id_currency': c['id_currency'],
+                'id_lang': lang['id_lang'],
+                'name': c['name'],
+                'symbol': c['sign']
+            })
         c['numeric_iso_code'] = c['iso_code_num'];
         del c['iso_code_num']
         del c['sign']
         del c['blank']
         del c['format']
         del c['decimals']
-    return converted
+    return converted_currencies, currency_lang
 
 
 def convert_employees(employees):
@@ -482,9 +490,13 @@ def convert_ps_customiztion_to_attributes(customizations, ps_product_attribute, 
                     'unit_price_impact':0,
                     'minimal_quantity':0
                 })
-                product_attribute_combination.append( { 'id_product_attribute': id_product_attribute, 'id_attribute': color, 'stickaz_qty': None } )
-                product_attribute_combination.append( { 'id_product_attribute': id_product_attribute, 'id_attribute': size, 'stickaz_qty': None } )
-
+                product_attribute_combination.append( { 'id_product_attribute': id_product_attribute, 'id_attribute': color} )
+                product_attribute_combination.append( { 'id_product_attribute': id_product_attribute, 'id_attribute': size} )
+    for pac in product_attribute_combination:
+        if 'stickaz_qty' in pac:
+            del pac['stickaz_qty']
+    # product 991 has dupes
+    ps_product_attribute = [pa for pa in ps_product_attribute if pa['id_product'] != 991 or pa['id_product_attribute'] < 4793]
     return ps_product_attribute, product_attribute_combination
 
 

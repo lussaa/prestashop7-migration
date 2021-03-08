@@ -46,6 +46,7 @@ $to_import = [
   'ps_cart',
   'ps_address',
   'ps_currency',
+  'ps_currency_lang',
   'ps_customer',
   'ps_cart_product',
   'ps_country',
@@ -73,8 +74,6 @@ $to_import = [
 foreach($to_import as $t) {
   import_table($t, $tables[$t]);
 }
-
-import_currency_symbols($tables['ps_currency'], $tables['ps_lang']);
 
 add_special_presta7_shop_tables($tables,'ps_attribute_shop', 'id_attribute', 'ps_attribute' );
 add_special_presta7_shop_tables($tables,'ps_attribute_group_shop','id_attribute_group', 'ps_attribute_group');
