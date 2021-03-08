@@ -28,22 +28,10 @@ $config = str_replace($current_cookie_key, $cookiki, $config);
 $res = file_put_contents($config_file, $config);
 
 
-function convert_order($from) {
-  $converted = $from;
-  $converted['reference'] = 'M' . $from['id_order'];
-  return $converted;
-}
 
-function convert_employee($from) {
-  $converted = $from;
-  unset($converted['bo_uimode']);
-  return $converted;
-}
 
 $converters = [
-  'ps_currency' => 'convert_currency',
-  'ps_orders' => 'convert_order',
-  'ps_employee' => 'convert_employee',
+
    'ps_product_attribute' => 'convert_default_on_zero',
    'ps_product_attribute_combination' => 'delete_non_existing_column',
    'ps_attribute_group' => 'add_group_type',

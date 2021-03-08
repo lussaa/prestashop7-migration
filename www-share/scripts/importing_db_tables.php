@@ -132,7 +132,7 @@
 
     function empty_table($table) {
         global $db;
-        echo "Deletion of contents ooooof " .$table ."\n";
+        echo "Deletion of contents of " .$table ."\n";
         $res = $db->delete($table, '', 0, false, false);
         if (!$res) {
             die("Delete of " . $table . " failed: " . $db->getMsgError() . "\n");
@@ -156,28 +156,85 @@
         );
     }
 
-     function import_table($table, $rows) {
+     function import_table($table_name, $table_data) {
         global $converters;
-        empty_table($table);
-        if (array_key_exists($table, $converters)) {
-            $converter = $converters[$table];
+        empty_table($table_name);
+        if (array_key_exists($table_name, $converters)) {
+            $converter = $converters[$table_name];
         } else {
             $converter = 'identity';
         }
         $count = 0;
-        foreach($rows as $row) {
-            $converted = $converter($row);
-            if ($converted != NULL){
-
+        $columns = $table_data['columns'];
+        foreach($table_data['rows'] as $row) {
+            $converted = convert($converter, $row, $columns);
+            if ($converted != NULL) {
                 $escaped = escape($converted);
-                insert($table, $escaped, true);
+                $rows = [$escaped]; // TODO dont insert 1 by 1
+                insert_compact($table_name, $columns, $rows);
                 $count++;
             }
 
 
         }
-        echo "Inserted " . $count . " rows into " . $table . "\n";
+        echo "Inserted " . $count . " rows into " . $table_name . "\n";
     }
 
+    function convert($converter, $row, $columns) {
+        // TODO rewrite converters to avoid zip/unzip, or remove conversions in import
+        $converted = $converter(zip($row, $columns));
+        if ($converted != NULL) {
+            return unzip($converted, $columns);
+        } else {
+            return $converted;
+        }
+    }
+
+    function zip($row, $columns) {
+        // zip([1, 2, 3], ["a", "b", "c"]) -----> ["a" => 1, "b" => 2, "c" => 3]
+        $res = [];
+        foreach ($row as $index => $value) {
+            $key = $columns[$index];
+            $res[$key] = $value;
+        }
+        return $res;
+    }
+
+    function unzip($obj, $columns) {
+        // unzip(["a" => 1, "b" => 2, "c" => 3], ["a", "b", "c"]) -----> [1, 2, 3]
+        $res = [];
+        foreach ($columns as $index => $key) {
+            $value = $obj[$key];
+            $res[] = $value;
+        }
+        return $res;
+    }
+
+    function insert_compact($table_name, $columns, $rows) {
+        $keys = [];
+        foreach ($columns as $column) {
+            $keys[] = '`' . bqSQL($column) . '`';
+        }
+        $values_stringified = [];
+        foreach ($rows as $row_data) {
+            $values = [];
+            foreach ($row_data as $value) {
+                $values[] = (null === $value) ? 'NULL' : "'{$value}'";
+            }
+            $values_stringified[] = '(' . implode(', ', $values) . ')';
+        }
+        $keys_stringified = implode(', ', $keys);
+        $sql = 'INSERT INTO `' . $table_name . '` (' . $keys_stringified . ') VALUES ' . implode(', ', $values_stringified);
+        global $db;
+        $res = $db->query($sql);
+        if (!$res) {
+            print_r($data);
+            if($db->getNumberError() === duplicate_key_error){
+                echo "Duplicate key error for " .$table_name ."\n" .$db->getMsgError() ."\n";
+            }else {
+                die("Insert into " . $table_name . " failed: " . $db->getMsgError() ."number error:  " .$db->getNumberError(). "\n");
+            }
+        }
+    }
 
 

@@ -371,6 +371,8 @@ def convert_model(model):
     model = copy(model)
     tables = model['tables']
     tables['ps_customer'] = convert_customers(tables['ps_customer'])
+    tables['ps_currency'] = convert_currencies(tables['ps_currency'])
+    tables['ps_employee'] = convert_employees(tables['ps_employee'])
     tables['ps_order'] = convert_orders(tables['ps_orders'], tables['ps_order_history'])
     tables['ps_product_attribute'], tables['ps_product_attribute_combination'] = \
         convert_ps_customiztion_to_attributes(
@@ -398,6 +400,26 @@ def convert_customers(customers):
     return first(args.limit_users, valid_users)
 
 
+
+def convert_currencies(currencies):
+    converted = copy(currencies)
+    for c in converted:
+        c['numeric_iso_code'] = c['iso_code_num'];
+        del c['iso_code_num']
+        del c['sign']
+        del c['blank']
+        del c['format']
+        del c['decimals']
+    return converted
+
+
+def convert_employees(employees):
+    converted = copy(employees)
+    for e in converted:
+        del e['bo_uimode']
+    return converted
+
+
 def convert_orders(orders, history):
     return list(_convert_orders(orders, history))
 
@@ -412,6 +434,7 @@ def _convert_orders(orders, history):
         if order['invoice_date'] is None:
             # Column is NOT NULL but some rows have NULL in the database somehow
             order['invoice_date'] = '1970-01-01 00:00:00'
+        order['reference'] = f'M{order["id_order"]}'
         yield order
 
 def get_max_id_product_attribute(ps_product_attribute):
