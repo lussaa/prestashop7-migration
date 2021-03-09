@@ -222,7 +222,13 @@ def export_tables_simple():
         'ps_image_lang',
         'ps_customization_field',
         'ps_customization',
-        'ps_customization_field_lang'
+        'ps_customization_field_lang',
+        'ps_product',
+        'ps_product_lang',
+        'ps_tag',
+        'ps_product_tag',
+        'ps_product_stickaz',
+        'ps_product_sale'
     ]
     return {
         table: sql_retrieve(f'SELECT * FROM {table}')
@@ -378,7 +384,7 @@ def convert_model(model):
             tables['ps_product_attribute'],
             tables['ps_attribute'],
             tables['ps_product_attribute_combination'])
-    #tables['ps_cart'] = convert_cart(tables['ps_cart'])
+    tables['ps_product_lang'] = convert_product_lang(tables['ps_product_lang'])
     return model
 
 
@@ -487,7 +493,10 @@ def color_attributes(ps_attribute):
     else:
         return color_ids
 
-
+def convert_product_lang(ps_product_lang):
+    for row in ps_product_lang:
+        row['id_shop'] = 1
+    return  ps_product_lang
 
 def most_recent_state(id_order, history):
     history_for_this_order = filter(lambda h: h['id_order'] == id_order, history)
@@ -496,7 +505,6 @@ def most_recent_state(id_order, history):
         return history_for_this_order[0]['id_order_state']
     else:
         return None
-
 
 def convert_cart(carts):
     carts = copy(carts)

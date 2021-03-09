@@ -79,7 +79,13 @@ $to_import = [
   'ps_attribute',
   'ps_attribute_lang',
   'ps_product_attribute',
-  'ps_product_attribute_combination'
+  'ps_product_attribute_combination',
+  'ps_product',
+  'ps_product_lang',
+  'ps_tag',
+  'ps_product_tag',
+  'ps_product_stickaz',
+  'ps_product_sale'
 ];
 
 foreach($to_import as $t) {
