@@ -204,6 +204,7 @@ def export_tables_simple():
         'ps_attribute',
         'ps_attribute_lang',
         'ps_product',
+        'ps_product_lang',
         'ps_product_attribute',
         'ps_product_attribute_combination',
         'ps_lang',
@@ -382,8 +383,28 @@ def convert_model(model):
             tables['ps_product_attribute'],
             tables['ps_attribute'],
             tables['ps_product_attribute_combination'])
+    tables['ps_product_shop'] = [
+        {
+            'id_product': p['id_product'],
+            'id_shop': 1,
+            'date_add': datetime.now(),
+            'date_upd': datetime.now(),
+        }
+        for p in tables['ps_product']
+    ]
+    tables['ps_category_product'] = dedupe(tables['ps_category_product'], {'id_category', 'id_product'})
     #tables['ps_cart'] = convert_cart(tables['ps_cart'])
     return model
+
+
+def dedupe(rows, key_columns):
+    def key(row):
+        return tuple(row[column] for column in key_columns)
+    by_key = {
+        key(r): r
+        for r in rows
+    }
+    return list(by_key.values())
 
 
 def convert_customers(customers):
@@ -506,6 +527,8 @@ def convert_ps_customiztion_to_attributes(products, customizations, ps_product_a
             del pac['stickaz_qty']
     # product 991 has dupes
     ps_product_attribute = [pa for pa in ps_product_attribute if (pa['id_product'] != 991 or pa['id_product_attribute'] < 4793) and pa['id_product'] in product_ids_to_keep]
+    for p in products_to_keep:
+        del p['id_color_default']
     return products_to_keep, ps_product_attribute, product_attribute_combination
 
 

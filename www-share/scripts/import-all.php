@@ -63,10 +63,14 @@ $to_import = [
   'ps_category',
   'ps_category_group',
   'ps_category_lang',
+  'ps_category_product',
   'ps_attribute_group',
   'ps_attribute_group_lang',
   'ps_attribute',
   'ps_attribute_lang',
+  'ps_product',
+  'ps_product_shop',
+  'ps_product_lang',
   'ps_product_attribute',
   'ps_product_attribute_combination'
 ];
@@ -82,15 +86,15 @@ add_special_presta7_shop_tables($tables,'ps_product_attribute_shop','id_product_
 
 
 echo "Done with attributes and combinations. \n";
-echo "Importing products.\n";
 
 
+/*echo "Importing products.\n";
 
 echo "Importing products. \n";
 $raw_products = $obj['products'];
 
 import_products($raw_products);
-
+*/
 echo "Done\n";
 
 ?>
