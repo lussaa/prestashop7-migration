@@ -11,9 +11,9 @@ $obj = json_decode($json, true);
 $tables = $obj['tables'];
 
 
-echo "Deleting all products\n";
-
-delete_products();
+//echo "Deleting all products\n";
+//
+//delete_products();
 
 echo "Importing...\n";
 
@@ -32,10 +32,6 @@ $res = file_put_contents($config_file, $config);
 
 $converters = [
 
-   'ps_product_attribute' => 'convert_default_on_zero',
-   'ps_product_attribute_combination' => 'delete_non_existing_column',
-   'ps_attribute_group' => 'add_group_type',
-    'ps_attribute' => 'color_not_null_because_it_is_size'
 ];
 
 
@@ -68,18 +64,21 @@ $to_import = [
   'ps_attribute_group_lang',
   'ps_attribute',
   'ps_attribute_lang',
+  'ps_attribute_impact',
   'ps_product',
   'ps_product_shop',
   'ps_product_lang',
   'ps_product_attribute',
   'ps_product_attribute_combination',
-  'ps_product',
   'ps_product_lang',
   'ps_tag',
   'ps_product_tag',
   'ps_product_stickaz',
   'ps_product_sale'
 ];
+
+echo "Creating table ps_product_stickaz....";
+create_table_prod_stickaz();
 
 foreach($to_import as $t) {
   import_table($t, $tables[$t]);

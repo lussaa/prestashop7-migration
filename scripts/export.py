@@ -203,10 +203,7 @@ def export_tables_simple():
         'ps_attribute_group_lang',
         'ps_attribute',
         'ps_attribute_lang',
-        'ps_product',
-        'ps_product_lang',
-        'ps_product_attribute',
-        'ps_product_attribute_combination',
+        'ps_attribute_impact',
         'ps_lang',
         'ps_order_detail',
         'ps_order_state',
@@ -227,6 +224,8 @@ def export_tables_simple():
         'ps_customization_field_lang',
         'ps_product',
         'ps_product_lang',
+        'ps_product_attribute',
+        'ps_product_attribute_combination',
         'ps_tag',
         'ps_product_tag',
         'ps_product_stickaz',
@@ -382,6 +381,9 @@ def convert_model(model):
     tables['ps_currency'], tables['ps_currency_lang'] = convert_currencies(tables['ps_currency'], tables['ps_lang'])
     tables['ps_employee'] = convert_employees(tables['ps_employee'])
     tables['ps_order'] = convert_orders(tables['ps_orders'], tables['ps_order_history'])
+    tables['ps_attribute_group'] = convert_attribute_group(tables['ps_attribute_group'])
+    tables['ps_attribute'] = convert_attribute(tables['ps_attribute'])
+    tables['ps_product_attribute'] = convert_product_attribute(tables['ps_product_attribute'])
     tables['ps_product'], tables['ps_product_attribute'], tables['ps_product_attribute_combination'] = \
         convert_ps_customiztion_to_attributes(
             tables['ps_product'],
@@ -389,16 +391,26 @@ def convert_model(model):
             tables['ps_product_attribute'],
             tables['ps_attribute'],
             tables['ps_product_attribute_combination'])
+    tables['ps_product_shop'] = deepcopy(tables['ps_product'])
+    for p in tables['ps_product_shop']:
+        p['id_shop'] = 1
+        del p['id_supplier']
+        del p['id_manufacturer']
+        del p['cache_has_attachments']
+        del p['cache_is_pack']
+        del p['depth']
+        del p['ean13']
+        del p['location']
+        del p['out_of_stock']
+        del p['quantity']
+        del p['quantity_discount']
+        del p['reference']
+        del p['upc']
+        del p['supplier_reference']
+        del p['height']
+        del p['weight']
+        del p['width']
 
-    tables['ps_product_shop'] = [
-        {
-            'id_product': p['id_product'],
-            'id_shop': 1,
-            'date_add': datetime.now(),
-            'date_upd': datetime.now(),
-        }
-        for p in tables['ps_product']
-    ]
     tables['ps_category_product'] = dedupe(tables['ps_category_product'], {'id_category', 'id_product'})
     #tables['ps_cart'] = convert_cart(tables['ps_cart'])
     return model
@@ -475,6 +487,24 @@ def _convert_orders(orders, history):
         order['reference'] = f'M{order["id_order"]}'
         yield order
 
+def convert_attribute_group(ps_attriute_group):
+    for row in ps_attriute_group:
+        row['group_type'] = 'radio'
+        row['position'] = 0
+    return  ps_attriute_group
+
+def convert_attribute(ps_attriute):
+    for row in ps_attriute:
+        if row['color'] is None:
+            row['color'] = ''
+    return  ps_attriute
+
+def convert_product_attribute(ps_product_attribute):
+    for row in ps_product_attribute:
+        if row['default_on'] == 0:
+            row['default_on'] = None
+    return  ps_product_attribute
+
 def get_max_id_product_attribute(ps_product_attribute):
     ids = [a['id_product_attribute'] for a in ps_product_attribute]
     return max(ids)
@@ -541,7 +571,7 @@ def convert_ps_customiztion_to_attributes(products, customizations, ps_product_a
 
 def generate_size_and_color_attribute_list(ps_attribute):
     for row in ps_attribute:
-        if(row['color'] is None or ''):
+        if(row['color'] is None or row['color']  == ''):
             size_ids.append(row['id_attribute'])
         else:
             color_ids.append(row['id_attribute'])

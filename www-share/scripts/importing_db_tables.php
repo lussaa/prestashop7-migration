@@ -26,7 +26,6 @@
                 $row_to_insert= array($id_name => $source_id_value, "id_shop" => $id_shop, );
                 foreach ($additional_columns_to_copy as $column){
                     $row_to_insert[$column] = $row_source[$column];
-                    if ($column ===  "default_on") { $row_to_insert = convert_default_on_zero($row_to_insert); }
                 }
                 $escaped = escape($row_to_insert);
             }
@@ -36,36 +35,6 @@
         }
         echo "Inserted " .$count ." rows in " .$table_to_insert ."\n";
     }
-
-    function add_group_type($row){
-        $row['group_type'] = "radio";
-        $row['position'] = 0;
-        return $row;
-    }
-
-
-    function convert_default_on_zero($row){
-
-         if ($row['default_on'] === 0 ){
-            $row['default_on'] = NULL;
-         }
-         return $row;
-
-    }
-    function color_not_null_because_it_is_size($row){
-
-        if ($row['color'] === NULL ){
-            $row['color'] = '';
-        }
-        return $row;
-
-    }
-
-
-     function delete_non_existing_column($row){
-         unset($row['stickaz_qty']);
-         return $row;
-     }
 
      function identity($x) {
         return $x;
@@ -138,11 +107,8 @@
      function import_table($table_name, $table_data) {
         global $converters;
         empty_table($table_name);
-        if (array_key_exists($table_name, $converters)) {
-            $converter = $converters[$table_name];
-        } else {
-            $converter = 'identity';
-        }
+        $converter = 'identity';
+
         $count = 0;
         $columns = $table_data['columns'];
         foreach($table_data['rows'] as $row) {
@@ -188,6 +154,26 @@
         }
         return $res;
     }
+
+    function create_table_prod_stickaz(){
+        $sql = 'CREATE TABLE `ps_product_stickaz` (
+          `id_product` int(10) NOT NULL,
+          `id_customer` int(10) NOT NULL,
+          `json` longtext NOT NULL,
+          `kaz_number` mediumint(9) DEFAULT NULL,
+          `category` int(4) DEFAULT NULL,
+          PRIMARY KEY (`id_product`)
+        ) ENGINE=MyISAM DEFAULT CHARSET=utf8';
+        global $db;
+        $res = $db->query($sql);
+        if (!$res) {
+            if($db->getNumberError() === 1050){ //already exists
+                echo "ps_product_stickaz exists " ."\n";
+            }else {
+                die("CREATE TABLE ps_product_stickaz failed: " . $db->getMsgError() ."number error:  " .$db->getNumberError(). "\n");
+            }
+        }
+        }
 
     function insert_compact($table_name, $columns, $rows) {
         $keys = [];
