@@ -62,14 +62,11 @@ function import_products($raw_products ){
         // Product creation
         $p = rawproductToProduct($raw_product);
         $id_product = $raw_product['id_product'];
-
         $p->add();
         $p->addToCategories($raw_product['id_category_default']);
-
         echo "Inserted product: " . $p->id_product . "\n";
 
         // Image addition
-
         $imageid_list = $raw_product['image_ids'];
 
         foreach ($imageid_list as $image_id) {
@@ -99,16 +96,26 @@ function import_products($raw_products ){
                 }
             } else {
                 echo " #################### Image check failed for img id -> " .$image_id .".\n";
-
             }
-
         }
-
-
-
     }
-
 }
 
+function copy_images_to_locations($ps_image){
+    $columns = $ps_image['columns'];
+    $rows = $ps_image['rows'];
+    foreach ($rows as $row) {
+
+        $row_reverted = zip($row, $columns);
+        $id_product = $row_reverted['id_product'];
+        $image_id = $row_reverted['id_image'];
+        $url = IMG_PATH  .$id_product ."-" .$image_id .".png";
+        if (MyAdminImportController::copyImg($id_product, $image_id, $url, 'products', true)) {
+                echo "Ok for img id -> " .$image_id .".\n";
+        } else {
+            echo " # copy image failed for img id -> " .$image_id .".\n";
+        }
+    }
+}
 ?>
 

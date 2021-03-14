@@ -217,7 +217,7 @@ def export_tables_simple():
         'ps_category_lang',
         'ps_category_product',
         'ps_image',
-        'ps_image_type',
+        #'ps_image_type',
         'ps_image_lang',
         'ps_customization_field',
         'ps_customization',
@@ -280,26 +280,26 @@ def sanitize_name(name):
 
 
 def export_products():
-    products = sql_retrieve('SELECT id_product, price, id_category_default, active FROM ps_product')
+    products = sql_retrieve('SELECT id_product FROM ps_product')
     products = first(args.limit_products, products)
-    text_fields = ['name', 'meta_description', 'link_rewrite', 'meta_keywords']
+    # text_fields = ['name', 'meta_description', 'link_rewrite', 'meta_keywords']
     img_field = 'image_ids'
-    text_fields_list = ', '.join(text_fields)
-    text_table = 'ps_product_lang'
-    item_id_field = 'id_product'
-    flat_texts = sql_retrieve_raw(f"""
-        SELECT {item_id_field}, id_lang, {text_fields_list}
-        FROM {text_table}""")
-    indexed_texts = defaultdict(empty_texts(text_fields))
+    # text_fields_list = ', '.join(text_fields)
+    # text_table = 'ps_product_lang'
+    # item_id_field = 'id_product'
+    # flat_texts = sql_retrieve_raw(f"""
+    #     SELECT {item_id_field}, id_lang, {text_fields_list}
+    #     FROM {text_table}""")
+    # indexed_texts = defaultdict(empty_texts(text_fields))
     max_product_id = max(int(product['id_product']) for product in products)
 
     images = download_product_img_data(max_product_id)
-    for item_id, id_lang, *text_values in flat_texts:
-        for field, value in zip(text_fields, text_values):
-            indexed_texts[item_id][field][id_lang] = value
+    # for item_id, id_lang, *text_values in flat_texts:
+    #     for field, value in zip(text_fields, text_values):
+    #         indexed_texts[item_id][field][id_lang] = value
     for product in products:
-        for field in text_fields:
-            product[field] = indexed_texts[product['id_product']][field]
+        # for field in text_fields:
+        #     product[field] = indexed_texts[product['id_product']][field]
         product[img_field] = images[product['id_product']]
     return products
 
@@ -410,6 +410,13 @@ def convert_model(model):
         del p['height']
         del p['weight']
         del p['width']
+    tables['ps_image'] = convert_ps_image(tables['ps_image'], tables['ps_product'])
+    tables['ps_image_shop'] = deepcopy(tables['ps_image'])
+    for p in tables['ps_image_shop']:
+        p['id_shop'] = 1
+        del p['position']
+    tables['ps_image_lang'] = convert_ps_image_lang(tables['ps_image_lang'], tables['ps_image'], 'id_image')
+
 
     tables['ps_category_product'] = dedupe(tables['ps_category_product'], {'id_category', 'id_product'})
     #tables['ps_cart'] = convert_cart(tables['ps_cart'])
@@ -519,6 +526,26 @@ def  delete_cutomized_products_from_tables(product_ids_to_keep, table_ps_product
     id_product_attributes_to_keep  = {row['id_product_attribute'] for row in new_table_product_attribute}
     new_table_product_attribute_combination = [row for row in table_product_attribute_combination if row['id_product_attribute'] in id_product_attributes_to_keep]
     return new_table_product_attribute, new_table_product_attribute_combination, customized_product_ids
+
+
+def convert_ps_image(ps_image, products, identifier = 'id_product'):
+    products_to_keep = first(args.limit_products, products)
+    ids_to_keep = {p[identifier] for p in products_to_keep}
+    new_table = [
+        row for row in ps_image
+        if row[identifier] in ids_to_keep
+    ]
+    for row in new_table:
+        if row['cover'] == 0 : row['cover'] = None
+    return new_table
+
+def convert_ps_image_lang(ps_image_lang, ps_image, identifier = 'id_image'):
+    imgs_to_keep = {p[identifier] for p in ps_image}
+    new_table = [
+        row for row in ps_image_lang
+        if row[identifier] in imgs_to_keep
+    ]
+    return new_table
 
 
 def convert_ps_customiztion_to_attributes(products, customizations, ps_product_attribute, ps_attribute, product_attribute_combination):

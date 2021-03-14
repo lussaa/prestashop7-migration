@@ -74,11 +74,15 @@ $to_import = [
   'ps_tag',
   'ps_product_tag',
   'ps_product_stickaz',
-  'ps_product_sale'
+  'ps_product_sale',
+  'ps_image',
+  'ps_image_shop',
+  'ps_image_lang'
 ];
 
 echo "Creating table ps_product_stickaz....";
 create_table_prod_stickaz();
+copy_images_to_locations($tables['ps_image']);
 
 foreach($to_import as $t) {
   import_table($t, $tables[$t]);
@@ -90,7 +94,7 @@ add_special_presta7_shop_tables($tables,'ps_product_attribute_shop','id_product_
     array("id_product", "price", "ecotax", "wholesale_price", "weight", "unit_price_impact", "minimal_quantity", "default_on"));
 
 
-echo "Done with attributes and combinations. \n";
+echo "Done with attributes and combinations. Starting with images. \n";
 
 
 /*echo "Importing products.\n";
