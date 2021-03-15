@@ -316,10 +316,10 @@ def download_product_image(pid, iid):
         with open(destination_path, 'wb') as dest:
             dest.write(src.read())
     if args.resize_images:
-        image = Image.open(destination_path);
-        image = image.resize((730,800));
-        image.save(destination_path);
-        print ("Img {0} resized.".format(destination_path))
+        image = Image.open(destination_path)
+        image = image.resize((730, 800))
+        image.save(destination_path)
+        print("Img {0} resized.".format(destination_path))
         
 
 class OurJsonEncoder(json.JSONEncoder):
@@ -388,6 +388,7 @@ def convert_model(model):
     tables['ps_category_product'] = [cp for cp in tables['ps_category_product'] if cp['id_product'] in product_ids_to_keep]
     tables['ps_category_shop'] = [{'id_category': c['id_category'], 'id_shop': 1} for c in tables['ps_category']]
     tables['ps_group_shop'] = [{'id_group': g['id_group'], 'id_shop': 1} for g in tables['ps_group']]
+    tables['ps_shop'] = [{'id_shop': 1, 'id_shop_group': 1, 'name': 'Stickaz', 'id_category': 1, 'theme_name': 'classic', 'active': 1, 'deleted': 0}]
     return model
 
 
