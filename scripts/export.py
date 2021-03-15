@@ -72,8 +72,6 @@ def connect_to_database():
 def run_export():
     connect_to_database()
     original_model = {
-        'categories': export_categories(),
-        'products': export_products(),
         'config': export_config(),
         'tables': export_tables(),
         'warnings': warnings,
@@ -111,6 +109,7 @@ def write_model(full_model, suffix):
         j = json.dumps(to_write, indent=4, cls=OurJsonEncoder)
         dest.write(j.encode('utf-8'))
 
+
 def factorize_columns(table):
     columns = list(table[0].keys())
     rows = [destructure(row, columns) for row in table]
@@ -128,6 +127,7 @@ def destructure(row_dict, columns):
         print(row_dict)
         print(columns)
         raise
+
 
 def sql_retrieve(query):
     c = db.cursor()
@@ -237,27 +237,6 @@ def export_tables_simple():
     }
 
 
-def export_categories():
-    categories = sql_retrieve('SELECT id_category, id_parent FROM ps_category')
-    text_fields = ['name', 'description', 'link_rewrite', 'meta_keywords']
-    text_fields_list = ', '.join(text_fields)
-    text_table = 'ps_category_lang'
-    item_id_field = 'id_category'
-    flat_texts = sql_retrieve_raw(f"""
-        SELECT {item_id_field}, id_lang, {text_fields_list}
-        FROM {text_table}""")
-    indexed_texts = defaultdict(empty_texts(text_fields))
-    for item_id, id_lang, *text_values in flat_texts:
-        for field, value in zip(text_fields, text_values):
-            indexed_texts[item_id][field][id_lang] = value
-    for category in categories:
-        for field in text_fields:
-            category[field] = indexed_texts[category['id_category']][field]
-    if not args.skip_images:
-        download_images(categories)
-    return categories
-
-
 def looks_spammy(user):
     return user['lastname'].startswith('www.')
 
@@ -277,31 +256,6 @@ def sanitize_name(name):
     if name == '':
         name = '.'
     return name
-
-
-def export_products():
-    products = sql_retrieve('SELECT id_product FROM ps_product')
-    products = first(args.limit_products, products)
-    # text_fields = ['name', 'meta_description', 'link_rewrite', 'meta_keywords']
-    img_field = 'image_ids'
-    # text_fields_list = ', '.join(text_fields)
-    # text_table = 'ps_product_lang'
-    # item_id_field = 'id_product'
-    # flat_texts = sql_retrieve_raw(f"""
-    #     SELECT {item_id_field}, id_lang, {text_fields_list}
-    #     FROM {text_table}""")
-    # indexed_texts = defaultdict(empty_texts(text_fields))
-    max_product_id = max(int(product['id_product']) for product in products)
-
-    images = download_product_img_data(max_product_id)
-    # for item_id, id_lang, *text_values in flat_texts:
-    #     for field, value in zip(text_fields, text_values):
-    #         indexed_texts[item_id][field][id_lang] = value
-    for product in products:
-        # for field in text_fields:
-        #     product[field] = indexed_texts[product['id_product']][field]
-        product[img_field] = images[product['id_product']]
-    return products
 
 
 def download_images(categories):
@@ -360,7 +314,8 @@ def download_product_image(pid, iid):
         image = Image.open(destination_path);
         image = image.resize((730,800));
         image.save(destination_path);
-        print ("Img {0} resized.".format(destination_path));
+        print ("Img {0} resized.".format(destination_path))
+        
 
 class OurJsonEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -380,13 +335,21 @@ def convert_model(model):
     tables['ps_customer'] = convert_customers(tables['ps_customer'])
     tables['ps_currency'], tables['ps_currency_lang'] = convert_currencies(tables['ps_currency'], tables['ps_lang'])
     tables['ps_employee'] = convert_employees(tables['ps_employee'])
-    tables['ps_order'] = convert_orders(tables['ps_orders'], tables['ps_order_history'])
     tables['ps_attribute_group'] = convert_attribute_group(tables['ps_attribute_group'])
     tables['ps_attribute'] = convert_attribute(tables['ps_attribute'])
-    tables['ps_product_attribute'] = convert_product_attribute(tables['ps_product_attribute'])
-    tables['ps_product'], tables['ps_product_attribute'], tables['ps_product_attribute_combination'] = \
+    tables['ps_product'], product_ids_to_keep = convert_products(tables['ps_product'])
+    tables['ps_cart'], tables['ps_cart_product'] = convert_cart_etc(tables['ps_cart'], tables['ps_cart_product'], product_ids_to_keep)
+    tables['ps_order_detail'], order_ids_to_keep = convert_order_detail(tables['ps_order_detail'], product_ids_to_keep)
+    tables['ps_orders'] = convert_orders(tables['ps_orders'], tables['ps_order_history'], order_ids_to_keep)
+    tables['ps_order_history'] = [oh for oh in tables['ps_order_history'] if oh['id_order'] in order_ids_to_keep]
+    tables['ps_product_tag'] = [pt for pt in tables['ps_product_tag'] if pt['id_product'] in product_ids_to_keep]
+    tables['ps_product_stickaz'] = [ps for ps in tables['ps_product_stickaz'] if ps['id_product'] in product_ids_to_keep]
+    tables['ps_product_sale'] = [ps for ps in tables['ps_product_sale'] if ps['id_product'] in product_ids_to_keep]
+    tables['ps_product_lang'] = convert_product_lang(tables['ps_product_lang'], product_ids_to_keep)
+    tables['ps_product_attribute'] = convert_product_attribute(tables['ps_product_attribute'], product_ids_to_keep)
+    tables['ps_product_attribute'], tables['ps_product_attribute_combination'] = \
         convert_ps_customiztion_to_attributes(
-            tables['ps_product'],
+            product_ids_to_keep,
             tables['ps_customization'],
             tables['ps_product_attribute'],
             tables['ps_attribute'],
@@ -416,10 +379,9 @@ def convert_model(model):
         p['id_shop'] = 1
         del p['position']
     tables['ps_image_lang'] = convert_ps_image_lang(tables['ps_image_lang'], tables['ps_image'], 'id_image')
-
-
     tables['ps_category_product'] = dedupe(tables['ps_category_product'], {'id_category', 'id_product'})
-    #tables['ps_cart'] = convert_cart(tables['ps_cart'])
+    tables['ps_category_product'] = [cp for cp in tables['ps_category_product'] if cp['id_product'] in product_ids_to_keep]
+    tables['ps_category_shop'] = [{'id_category': c['id_category'], 'id_shop': 1} for c in tables['ps_category']]
     return model
 
 
@@ -449,7 +411,6 @@ def convert_customers(customers):
     return first(args.limit_users, valid_users)
 
 
-
 def convert_currencies(currencies, langs):
     converted_currencies = copy(currencies)
     currency_lang = []
@@ -477,12 +438,15 @@ def convert_employees(employees):
     return converted
 
 
-def convert_orders(orders, history):
-    return list(_convert_orders(orders, history))
+def convert_orders(orders, history, order_ids_to_keep):
+    return list(_convert_orders(orders, history, order_ids_to_keep))
 
 
-def _convert_orders(orders, history):
+def _convert_orders(orders, history, order_ids_to_keep):
     for order in orders:
+        order = copy(order)
+        if order['id_order'] not in order_ids_to_keep:
+            continue
         current_state = most_recent_state(order['id_order'], history)
         order['current_state'] = current_state
         if order['delivery_date'] is None:
@@ -494,36 +458,47 @@ def _convert_orders(orders, history):
         order['reference'] = f'M{order["id_order"]}'
         yield order
 
+
+def convert_order_detail(ps_order_detail, product_ids_to_keep):
+    ps_order_detail = [od for od in ps_order_detail if od['product_id'] in product_ids_to_keep]
+    order_ids_to_keep = {od['id_order'] for od in ps_order_detail}
+    return ps_order_detail, order_ids_to_keep
+
+
 def convert_attribute_group(ps_attriute_group):
     for row in ps_attriute_group:
         row['group_type'] = 'radio'
         row['position'] = 0
-    return  ps_attriute_group
+    return ps_attriute_group
+
 
 def convert_attribute(ps_attriute):
     for row in ps_attriute:
         if row['color'] is None:
             row['color'] = ''
-    return  ps_attriute
+    return ps_attriute
 
-def convert_product_attribute(ps_product_attribute):
+
+def convert_product_attribute(ps_product_attribute, product_ids_to_keep):
+    ps_product_attribute = [pa for pa in ps_product_attribute if pa['id_product'] in product_ids_to_keep]
     for row in ps_product_attribute:
         if row['default_on'] == 0:
             row['default_on'] = None
-    return  ps_product_attribute
+    return ps_product_attribute
+
 
 def get_max_id_product_attribute(ps_product_attribute):
     ids = [a['id_product_attribute'] for a in ps_product_attribute]
     return max(ids)
 
 
-def  delete_cutomized_products_from_tables(product_ids_to_keep, table_ps_product_attribute, table_product_attribute_combination , table_customizations):
-    customized_product_ids = {customization['id_product'] for customization in table_customizations}
+def delete_cutomized_products_from_tables(product_ids_to_keep, table_ps_product_attribute, table_product_attribute_combination , table_customizations):
+    customized_product_ids = {customization['id_product'] for customization in table_customizations if customization['id_product'] in product_ids_to_keep}
     new_table_product_attribute = [
         row for row in table_ps_product_attribute
         if row['id_product'] not in customized_product_ids and row['id_product'] in product_ids_to_keep
     ]
-    id_product_attributes_to_keep  = {row['id_product_attribute'] for row in new_table_product_attribute}
+    id_product_attributes_to_keep = {row['id_product_attribute'] for row in new_table_product_attribute}
     new_table_product_attribute_combination = [row for row in table_product_attribute_combination if row['id_product_attribute'] in id_product_attributes_to_keep]
     return new_table_product_attribute, new_table_product_attribute_combination, customized_product_ids
 
@@ -539,6 +514,7 @@ def convert_ps_image(ps_image, products, identifier = 'id_product'):
         if row['cover'] == 0 : row['cover'] = None
     return new_table
 
+
 def convert_ps_image_lang(ps_image_lang, ps_image, identifier = 'id_image'):
     imgs_to_keep = {p[identifier] for p in ps_image}
     new_table = [
@@ -548,10 +524,15 @@ def convert_ps_image_lang(ps_image_lang, ps_image, identifier = 'id_image'):
     return new_table
 
 
-def convert_ps_customiztion_to_attributes(products, customizations, ps_product_attribute, ps_attribute, product_attribute_combination):
-
+def convert_products(products):
     products_to_keep = first(args.limit_products, products)
     product_ids_to_keep = {p['id_product'] for p in products_to_keep}
+    for p in products_to_keep:
+        del p['id_color_default']
+    return products_to_keep, product_ids_to_keep
+
+
+def convert_ps_customiztion_to_attributes(product_ids_to_keep, customizations, ps_product_attribute, ps_attribute, product_attribute_combination):
 
     ps_product_attribute, product_attribute_combination, customized_product_ids = \
         delete_cutomized_products_from_tables(product_ids_to_keep, ps_product_attribute, product_attribute_combination, customizations)
@@ -591,37 +572,41 @@ def convert_ps_customiztion_to_attributes(products, customizations, ps_product_a
             del pac['stickaz_qty']
     # product 991 has dupes
     ps_product_attribute = [pa for pa in ps_product_attribute if (pa['id_product'] != 991 or pa['id_product_attribute'] < 4793) and pa['id_product'] in product_ids_to_keep]
-    for p in products_to_keep:
-        del p['id_color_default']
-    return products_to_keep, ps_product_attribute, product_attribute_combination
+
+    return ps_product_attribute, product_attribute_combination
 
 
 def generate_size_and_color_attribute_list(ps_attribute):
     for row in ps_attribute:
-        if(row['color'] is None or row['color']  == ''):
+        if row['color'] is None or row['color']  == '':
             size_ids.append(row['id_attribute'])
         else:
             color_ids.append(row['id_attribute'])
 
+
 def size_attributes(ps_attribute):
     global size_ids
-    if (size_ids is None or size_ids == []):
+    if size_ids is None or size_ids == []:
         generate_size_and_color_attribute_list(ps_attribute)
         return size_ids
     else:
         return size_ids
+
 
 def color_attributes(ps_attribute):
-    if (color_ids is None):
+    if color_ids is None:
         generate_size_and_color_attribute_list(ps_attribute)
         return color_ids
     else:
         return color_ids
 
-def convert_product_lang(ps_product_lang):
+
+def convert_product_lang(ps_product_lang, product_ids_to_keep):
+    ps_product_lang = [pl for pl in ps_product_lang if pl['id_product'] in product_ids_to_keep]
     for row in ps_product_lang:
         row['id_shop'] = 1
-    return  ps_product_lang
+    return ps_product_lang
+
 
 def most_recent_state(id_order, history):
     history_for_this_order = filter(lambda h: h['id_order'] == id_order, history)
@@ -631,12 +616,13 @@ def most_recent_state(id_order, history):
     else:
         return None
 
-def convert_cart(carts):
-    carts = copy(carts)
-    for cart in carts:
-        if cart['secure_key'] == '':
-            cart['secure_key'] = {'type': 'sql', 'value': "''"}
-    return carts
+
+def convert_cart_etc(ps_cart, ps_cart_product, product_ids_to_keep):
+    ps_cart_product = [cp for cp in ps_cart_product if cp['id_product'] in product_ids_to_keep]
+    cart_ids_to_keep = {cp['id_cart'] for cp in ps_cart_product}
+    ps_cart = [c for c in ps_cart if c['id_cart'] in cart_ids_to_keep]
+    return ps_cart, ps_cart_product
+
 
 if __name__ == '__main__':
     main()
