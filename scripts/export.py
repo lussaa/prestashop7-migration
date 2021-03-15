@@ -229,7 +229,12 @@ def export_tables_simple():
         'ps_tag',
         'ps_product_tag',
         'ps_product_stickaz',
-        'ps_product_sale'
+        'ps_product_sale',
+
+        'ps_group',
+        'ps_category_group',
+        'ps_customer_group',
+        'ps_group_lang',
     ]
     return {
         table: sql_retrieve(f'SELECT * FROM {table}')
@@ -382,6 +387,7 @@ def convert_model(model):
     tables['ps_category_product'] = dedupe(tables['ps_category_product'], {'id_category', 'id_product'})
     tables['ps_category_product'] = [cp for cp in tables['ps_category_product'] if cp['id_product'] in product_ids_to_keep]
     tables['ps_category_shop'] = [{'id_category': c['id_category'], 'id_shop': 1} for c in tables['ps_category']]
+    tables['ps_group_shop'] = [{'id_group': g['id_group'], 'id_shop': 1} for g in tables['ps_group']]
     return model
 
 

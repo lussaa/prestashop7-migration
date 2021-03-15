@@ -57,6 +57,7 @@ $to_import = [
   'ps_profile',
   'ps_profile_lang',
   'ps_category',
+  'ps_category_shop',
   'ps_category_group',
   'ps_category_lang',
   'ps_category_product',
@@ -77,7 +78,12 @@ $to_import = [
   'ps_product_sale',
   'ps_image',
   'ps_image_shop',
-  'ps_image_lang'
+  'ps_image_lang',
+  'ps_group',
+  'ps_group_lang',
+  'ps_group_shop',
+  'ps_category_group',
+  'ps_customer_group'
 ];
 
 echo "Creating table ps_product_stickaz....";
