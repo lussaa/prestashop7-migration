@@ -6,7 +6,8 @@ require_once './config/config.inc.php';
 $db = Db::getInstance();
 $pid = $_GET['id_product'];
 if (!is_numeric($pid)) {
-    $pid = "0";
+    echo "Expected parameter (numeric) id_product\n";
+    exit;
 }
 
 $res = $db->executeS('SELECT `json` FROM `'._DB_PREFIX_.'product_stickaz` WHERE `id_product` = '. $pid);
@@ -15,6 +16,7 @@ if ($res) {
     $model = json_decode($model_json, true);
 } else {
     echo "Product " . $pid . " not found\n";
+    exit;
 }
 
 $res = $db->executeS('SELECT * FROM `'._DB_PREFIX_.'product_lang` WHERE `id_product` = '. $pid . ' AND id_lang=1');
