@@ -389,6 +389,7 @@ def convert_model(model):
     tables['ps_category_shop'] = [{'id_category': c['id_category'], 'id_shop': 1} for c in tables['ps_category']]
     tables['ps_group_shop'] = [{'id_group': g['id_group'], 'id_shop': 1} for g in tables['ps_group']]
     tables['ps_shop'] = [{'id_shop': 1, 'id_shop_group': 1, 'name': 'Stickaz', 'id_category': 1, 'theme_name': 'classic', 'active': 1, 'deleted': 0}]
+    tables['ps_address'] = convert_addresses(tables['ps_address'])
     return model
 
 
@@ -469,6 +470,10 @@ def _convert_orders(orders, history, order_ids_to_keep):
 def convert_order_detail(ps_order_detail, product_ids_to_keep):
     ps_order_detail = [od for od in ps_order_detail if od['product_id'] in product_ids_to_keep]
     order_ids_to_keep = {od['id_order'] for od in ps_order_detail}
+    for od in ps_order_detail:
+        for field in ['product_supplier_reference']:
+            if od[field] is None:
+                od[field] = ''
     return ps_order_detail, order_ids_to_keep
 
 
@@ -536,6 +541,9 @@ def convert_products(products):
     product_ids_to_keep = {p['id_product'] for p in products_to_keep}
     for p in products_to_keep:
         del p['id_color_default']
+        for field in ['supplier_reference']:
+            if p[field] is None:
+                p[field] = ''
     return products_to_keep, product_ids_to_keep
 
 
@@ -629,6 +637,15 @@ def convert_cart_etc(ps_cart, ps_cart_product, product_ids_to_keep):
     cart_ids_to_keep = {cp['id_cart'] for cp in ps_cart_product}
     ps_cart = [c for c in ps_cart if c['id_cart'] in cart_ids_to_keep]
     return ps_cart, ps_cart_product
+
+
+def convert_addresses(ps_address):
+    converted = deepcopy(ps_address)
+    for a in converted:
+        for field in ['company', 'address2', 'phone', 'phone_mobile']:
+            if a[field] is None:
+                a[field] = ''
+    return converted
 
 
 if __name__ == '__main__':
