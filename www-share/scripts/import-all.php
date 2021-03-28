@@ -83,7 +83,8 @@ $to_import = [
   'ps_group_lang',
   'ps_group_shop',
   'ps_category_group',
-  'ps_customer_group'
+  'ps_customer_group',
+  'ps_shop'
 ];
 
 echo "Creating table ps_product_stickaz....";
