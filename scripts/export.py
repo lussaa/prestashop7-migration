@@ -35,7 +35,7 @@ warnings = []
 errors = []
 
 color_ids = []
-size_ids = []
+kaz_sizes = {}
 
 next_id_product_attribute = None
 
@@ -321,7 +321,6 @@ def download_product_image(pid, iid):
         image.save(destination_path)
         print("Img {0} resized.".format(destination_path))
         
-
 class OurJsonEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Decimal):
@@ -358,6 +357,7 @@ def convert_model(model):
             tables['ps_customization'],
             tables['ps_product_attribute'],
             tables['ps_attribute'],
+            tables['ps_attribute_lang'],
             tables['ps_product_attribute_combination'])
     tables['ps_product_shop'] = deepcopy(tables['ps_product'])
     for p in tables['ps_product_shop']:
@@ -479,7 +479,10 @@ def convert_order_detail(ps_order_detail, product_ids_to_keep):
 
 def convert_attribute_group(ps_attriute_group):
     for row in ps_attriute_group:
-        row['group_type'] = 'radio'
+        if row['is_color_group'] == 1:
+            row['group_type'] = 'color'
+        else:
+            row['group_type'] = 'radio'
         row['position'] = 0
     return ps_attriute_group
 
@@ -506,13 +509,17 @@ def get_max_id_product_attribute(ps_product_attribute):
 
 def delete_cutomized_products_from_tables(product_ids_to_keep, table_ps_product_attribute, table_product_attribute_combination , table_customizations):
     customized_product_ids = {customization['id_product'] for customization in table_customizations if customization['id_product'] in product_ids_to_keep}
-    new_table_product_attribute = [
+    table_product_attribute_without_customized = [
         row for row in table_ps_product_attribute
         if row['id_product'] not in customized_product_ids and row['id_product'] in product_ids_to_keep
     ]
-    id_product_attributes_to_keep = {row['id_product_attribute'] for row in new_table_product_attribute}
-    new_table_product_attribute_combination = [row for row in table_product_attribute_combination if row['id_product_attribute'] in id_product_attributes_to_keep]
-    return new_table_product_attribute, new_table_product_attribute_combination, customized_product_ids
+    product_attributes_only_black_customizable = {
+        row['reference']: row for row in table_ps_product_attribute
+        if row['id_product'] in customized_product_ids and row['id_product'] in product_ids_to_keep
+    }
+    id_product_attributes_without_customized = {row['id_product_attribute'] for row in table_product_attribute_without_customized}
+    new_table_product_attribute_combination = [row for row in table_product_attribute_combination if row['id_product_attribute'] in id_product_attributes_without_customized]
+    return product_attributes_only_black_customizable, table_product_attribute_without_customized, new_table_product_attribute_combination, customized_product_ids
 
 
 def convert_ps_image(ps_image, products, identifier = 'id_product'):
@@ -547,21 +554,25 @@ def convert_products(products):
     return products_to_keep, product_ids_to_keep
 
 
-def convert_ps_customiztion_to_attributes(product_ids_to_keep, customizations, ps_product_attribute, ps_attribute, product_attribute_combination):
+def convert_ps_customiztion_to_attributes(product_ids_to_keep, customizations, ps_product_attribute, ps_attribute, ps_attribute_lang, product_attribute_combination):
 
-    ps_product_attribute, product_attribute_combination, customized_product_ids = \
+    product_attributes_only_black_customizable, ps_product_attribute, product_attribute_combination, customized_product_ids = \
         delete_cutomized_products_from_tables(product_ids_to_keep, ps_product_attribute, product_attribute_combination, customizations)
 
     for id_product in customized_product_ids:
         id_product_attribute = get_max_id_product_attribute(ps_product_attribute)
+        _kaz_sizes_dict = kaz_sizes_dict(ps_attribute, ps_attribute_lang)
 
-        for size in size_attributes(ps_attribute):
-            for color in color_attributes(ps_attribute):
+        for key_idsize in _kaz_sizes_dict:
+            reference = str(id_product) + "-s" + str(_kaz_sizes_dict[key_idsize])
+            black_product_attributes = product_attributes_only_black_customizable[reference]
+
+            for color in color_id_attributes(ps_attribute, ps_attribute_lang):
                 id_product_attribute = id_product_attribute + 1
                 ps_product_attribute.append({
                     'id_product_attribute': id_product_attribute,
                     'id_product': id_product,
-                    'reference': None,
+                    'reference': black_product_attributes['reference'],
                     'supplier_reference': None,
                     'location': None,
                     'ean13': None,
@@ -573,15 +584,15 @@ def convert_ps_customiztion_to_attributes(product_ids_to_keep, customizations, p
                     'low_stock_alert': None,
                     'available_date': None,
                     'wholesale_price':0,
-                    'price': 0,
+                    'price': black_product_attributes['price'],
                     'ecotax': 0,
                     'quantity': 0,
-                    'weight': 0,
+                    'weight': black_product_attributes['weight'],
                     'unit_price_impact':0,
                     'minimal_quantity':0
                 })
                 product_attribute_combination.append( { 'id_product_attribute': id_product_attribute, 'id_attribute': color} )
-                product_attribute_combination.append( { 'id_product_attribute': id_product_attribute, 'id_attribute': size} )
+                product_attribute_combination.append( { 'id_product_attribute': id_product_attribute, 'id_attribute': key_idsize} )
     for pac in product_attribute_combination:
         if 'stickaz_qty' in pac:
             del pac['stickaz_qty']
@@ -591,26 +602,27 @@ def convert_ps_customiztion_to_attributes(product_ids_to_keep, customizations, p
     return ps_product_attribute, product_attribute_combination
 
 
-def generate_size_and_color_attribute_list(ps_attribute):
-    for row in ps_attribute:
-        if row['color'] is None or row['color']  == '':
-            size_ids.append(row['id_attribute'])
+def generate_size_and_color_attribute_list(ps_attribute, ps_attribute_lang):
+    size_ids = { row['id_attribute'] for row in ps_attribute if row['color'] is None or row['color']  == ''}
+    for row in ps_attribute_lang:
+        if row['id_lang'] == 1 and row['id_attribute'] in size_ids:
+            kaz_sizes[row['id_attribute']] = row['name']
         else:
             color_ids.append(row['id_attribute'])
 
 
-def size_attributes(ps_attribute):
-    global size_ids
-    if size_ids is None or size_ids == []:
-        generate_size_and_color_attribute_list(ps_attribute)
-        return size_ids
+def kaz_sizes_dict(ps_attribute, ps_attribute_lang):
+    global kaz_sizes
+    if kaz_sizes is None or kaz_sizes == {}:
+        generate_size_and_color_attribute_list(ps_attribute, ps_attribute_lang)
+        return kaz_sizes
     else:
-        return size_ids
+        return kaz_sizes
 
 
-def color_attributes(ps_attribute):
+def color_id_attributes(ps_attribute, ps_attribute_lang):
     if color_ids is None:
-        generate_size_and_color_attribute_list(ps_attribute)
+        generate_size_and_color_attribute_list(ps_attribute, ps_attribute_lang)
         return color_ids
     else:
         return color_ids

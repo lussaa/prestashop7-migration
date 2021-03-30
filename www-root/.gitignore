@@ -1,2 +1,9 @@
+
 *
+!./*
+!html/
+!html/modules/
+!html/modules/productvariationswidget/
+!html/modules/productvariationswidget/**
+
 !.gitignore
