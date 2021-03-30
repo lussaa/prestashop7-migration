@@ -1,6 +1,8 @@
 version: "3"
 services:
   apache:
+    dns:
+      - 8.8.8.8
     image: prestashop/prestashop:1.7.7.0
     restart: always
     ports:
