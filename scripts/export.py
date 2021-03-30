@@ -1,4 +1,4 @@
-    #!/usr/bin/env python
+#!/usr/bin/env python
 
 import re
 import os
@@ -340,7 +340,7 @@ def convert_model(model):
     tables['ps_currency'], tables['ps_currency_lang'] = convert_currencies(tables['ps_currency'], tables['ps_lang'])
     tables['ps_employee'] = convert_employees(tables['ps_employee'])
     tables['ps_attribute_group'] = convert_attribute_group(tables['ps_attribute_group'])
-    tables['ps_attribute'] = convert_attribute(tables['ps_attribute'])
+    tables['ps_attribute'] = convert_attribute(tables['ps_attribute'],tables['ps_attribute_lang'], tables['ps_attribute_group'])
     tables['ps_product'], product_ids_to_keep = convert_products(tables['ps_product'])
     tables['ps_cart'], tables['ps_cart_product'] = convert_cart_etc(tables['ps_cart'], tables['ps_cart_product'], product_ids_to_keep)
     tables['ps_order_detail'], order_ids_to_keep = convert_order_detail(tables['ps_order_detail'], product_ids_to_keep)
@@ -487,13 +487,35 @@ def convert_attribute_group(ps_attriute_group):
         row['position'] = 0
     return ps_attriute_group
 
+def convert_attribute(ps_attribute, ps_attribute_lang, ps_attribute_group):
+    ps_attribute = sort_attributes(ps_attribute, ps_attribute_lang, ps_attribute_group )
 
-def convert_attribute(ps_attriute):
-    for row in ps_attriute:
+    for row in ps_attribute:
         if row['color'] is None:
             row['color'] = ''
-    return ps_attriute
+    return ps_attribute
 
+# x represents size or color as possible attribute, id_attribute_group defines if it is color or size
+def sort_attributes(ps_attribute, ps_attribute_lang, ps_attribute_group):
+    groups = [ row['id_attribute_group'] for row in ps_attribute_group ]
+    for id_attribute_group in groups:
+
+        attribute_x_ids = [ row['id_attribute'] for row in ps_attribute if row['id_attribute_group'] == id_attribute_group]
+        ps_attribute_lang_x_dict = {row['id_attribute']: row['name'] for row in ps_attribute_lang if (row['id_attribute'] in attribute_x_ids and row['id_lang'] == 1) }
+
+        x_list = [v for k,v in ps_attribute_lang_x_dict.items() ]
+        x_list_sorted = sorted(x_list);
+
+        for row in ps_attribute:
+            if row['id_attribute'] in attribute_x_ids:
+                x_of_this_one = ps_attribute_lang_x_dict[row['id_attribute']]
+                index = x_list_sorted.index(x_of_this_one)
+                row['position'] = index +1
+                print("Attrib {} gets position:{}.".format(x_of_this_one, index) )
+        print("Done for group" )
+        print( id_attribute_group)
+
+    return ps_attribute
 
 def convert_product_attribute(ps_product_attribute, product_ids_to_keep):
     ps_product_attribute = [pa for pa in ps_product_attribute if pa['id_product'] in product_ids_to_keep]
