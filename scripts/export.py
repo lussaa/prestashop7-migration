@@ -511,9 +511,6 @@ def sort_attributes(ps_attribute, ps_attribute_lang, ps_attribute_group):
                 x_of_this_one = ps_attribute_lang_x_dict[row['id_attribute']]
                 index = x_list_sorted.index(x_of_this_one)
                 row['position'] = index +1
-                print("Attrib {} gets position:{}.".format(x_of_this_one, index) )
-        print("Done for group" )
-        print( id_attribute_group)
 
     return ps_attribute
 
