@@ -20,15 +20,17 @@ class AdminStickazProductManualController extends ModuleAdminController
         parent::initContent();
 
         $productId = Tools::getValue('id_product'); // Retrieved from GET vars
-        $product = new Product($productId);
-        $langId = $this->context->language->id;
-        $productName = $product->name[$langId];
-
-        $db = Db::getInstance();
         if (!is_numeric($productId)) {
             echo "Expected parameter (numeric) id_product\n";
             exit;
         }
+        $product = new Product($productId);
+        $langId = Tools::getValue('id_lang');
+        if (!is_numeric($langId)) {
+            $langId = $this->context->language->id;
+        }
+        $productName = $product->name[$langId];
+        $db = Db::getInstance();
         $res = $db->executeS('SELECT `json` FROM `'._DB_PREFIX_.'product_stickaz` WHERE `id_product` = '. $productId);
         if ($res) {
             $modelJson = $res[0]['json'];

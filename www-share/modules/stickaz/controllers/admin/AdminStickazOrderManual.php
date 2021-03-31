@@ -31,6 +31,7 @@ class AdminStickazOrderManualController extends ModuleAdminController
             array(
               'orderId' => $orderId,
               'order' => $order,
+              'orderLang' => $order->id_lang,
               'address_invoice' => $addressInvoice,
               'invoiceState' => $invoiceState,
               'address_delivery' => $addressDelivery,

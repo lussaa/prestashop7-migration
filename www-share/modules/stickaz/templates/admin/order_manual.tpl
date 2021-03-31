@@ -35,7 +35,7 @@
 {foreach $productDetails $pd}
     <tr>
         <th>
-            <a href="{$link->getAdminLink('AdminStickazProductManual', true, [], ['id_product' => $pd['product_id']])}">
+            <a href="{$link->getAdminLink('AdminStickazProductManual', true, [], ['id_product' => $pd['product_id'], 'id_lang' => $orderLang])}">
                 {$pd['product_name']}
             </a>
         </th>
