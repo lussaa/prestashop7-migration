@@ -6,7 +6,7 @@ class AdminStickazOrderManualController extends ModuleAdminController
 
     public function display()
     {
-            $this->context->smarty->display(_PS_MODULE_DIR_ . 'stickaz/templates/admin/order_manual.tpl');
+        $this->context->smarty->display(_PS_MODULE_DIR_ . 'stickaz/templates/admin/order_manual.tpl');
     }
 
 
