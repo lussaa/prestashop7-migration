@@ -15,3 +15,5 @@ docker exec -i $PRESTA_CONTAINER mv /var/www/html/admin /var/www/html/bo
 docker exec -i $PRESTA_CONTAINER ln -s /www-share/custom_pages /var/www/html/custom_pages
 docker exec -i $PRESTA_CONTAINER ln -s /www-share/modules/stickaz /var/www/html/modules/stickaz
 
+docker exec -i $PRESTA_CONTAINER ln -s /www-share/modules/productvariationswidget /var/www/html/modules/productvariationswidget
+docker exec -i $PRESTA_CONTAINER ln -s /www-share/themes/stickaz /var/www/html/themes/stickaz/
