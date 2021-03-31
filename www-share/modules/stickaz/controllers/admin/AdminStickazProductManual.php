@@ -39,21 +39,21 @@ class AdminStickazProductManualController extends ModuleAdminController
         }
 
         $colors = self::getAvailableColors();
-        $availableColorsForClient = json_encode(array_values($colors));
+        $availableColorsJson = json_encode(array_values($colors));
+        $usedColors = self::getUsedColors($colors, $model);
 
         $this->context->smarty->assign(
             array(
-                'hasUsername' =>false,
-                'jsonVars' => array('availableColors' => $availableColorsForClient),
+                'jsonVars' => array(
+                    'availableColors' => $availableColorsJson,
+                    'model' => $modelJson,
+                ),
                 'availableColors' => $colors,
-
-              'productId' => $productId,
-              'product' => $product,
-              'currentDesign' => ['name' => $productName, 'json' => $modelJson],
-              'productName' => $productName,
-              'model' => $model,
-              'modelJson' => $modelJson,
-
+                'usedColors' => $usedColors,
+                'shippingColors' => self::getShippingInfo($usedColors),
+                'productId' => $productId,
+                'product' => $product,
+                'productName' => $productName,
             ));
 
         $this->context->smarty->assign('my_css', $this->my_css);
@@ -62,33 +62,84 @@ class AdminStickazProductManualController extends ModuleAdminController
 
     private $my_css = [
         __PS_BASE_URI__ . 'modules/stickaz/assets/css/product-manual.css',
-        __PS_BASE_URI__ . 'modules/stickaz/assets/ext/jquery.qtip.css',
     ];
 
     private $my_js = [
         __PS_BASE_URI__ . 'modules/stickaz/assets/ext/jquery-1.4.4.min.js',
-        __PS_BASE_URI__ . 'modules/stickaz/assets/ext/modernizr-1.7.min.js',
-        __PS_BASE_URI__ . 'modules/stickaz/assets/ext/jquery.qtip.js',
-        __PS_BASE_URI__ . 'modules/stickaz/assets/ext/jquery.fileupload-ui.js',
-        __PS_BASE_URI__ . 'modules/stickaz/assets/ext/jquery.json-2.2.min.js',
-        __PS_BASE_URI__ . 'modules/stickaz/assets/js/studiov2.js',
-        __PS_BASE_URI__ . 'modules/stickaz/assets/js/product-manual.js',
+        __PS_BASE_URI__ . 'modules/stickaz/assets/js/studio_simple.js',
     ];
 
     public static function getAvailableColors($idLang=null)
     {
         $colors = array();
-        $idLang = 1;
-        $attributes = AttributeGroup::getAttributes($idLang, 1);
+        $idLangEnglish = 1;
+        $idAttributeGroupColor = 1;
+        $attributes = AttributeGroup::getAttributes($idLangEnglish, $idAttributeGroupColor);
         foreach($attributes as $id => $attr)
         {
-            $name = explode('-', $attr['name']);
-            $colors[trim($name[1])] = array('code' => trim($name[1]), 'name' => trim($name[2]), 'color' => $attr['color'], 'id_attribute' => $attr['id_attribute']);
-
+            $name_items = explode('-', $attr['name']);
+            $code = trim($name_items[1]);
+            $name = trim($name_items[2]);
+            $colors[$code] = array('code' => $code, 'name' => $name, 'color' => $attr['color'], 'id_attribute' => $attr['id_attribute']);
         }
         return $colors;
     }
 
 
+    private static function getUsedColors($colors, $model) {
+        $usedColors = [];
+        foreach($colors as $color) {
+            $quantityUsed = self::getQuantity($color, $model);
+            if ($quantityUsed > 0) {
+                $usedColors[] = [
+                    'code' => $color['code'],
+                    'name' => $color['name'],
+                    'color' => $color['color'],
+                    'quantity' => $quantityUsed,
+                ];
+            }
+        }
+        return $usedColors;
+    }
+
+    private static function getQuantity($color, $model) {
+        $count = 0;
+        foreach ($model['canvas'] as $row) {
+            foreach ($row as $cell) {
+                if ($cell === 'c' . $color['code']) {
+                    $count += 1;
+                }
+            }
+        }
+        return $count;
+    }
+
+    private static function getShippingInfo($usedColors) {
+        $info = [];
+        foreach ($usedColors as $usedColor) {
+            $info[] = [
+                'code' => $usedColor['code'],
+                'name' => $usedColor['name'],
+                'color' => $usedColor['color'],
+                'counts' => self::getShippingCounts($usedColor['quantity']),
+            ];
+        }
+        return $info;
+    }
+
+    private static function getShippingCounts($usedQuantity) {
+        $packagescount9 = ($usedQuantity*1.1/9);         //1.1 is to get plus extra 10%
+        $extrakaz9=fmod($packagescount9,1)*9;
+        $packagescount4 = ($usedQuantity*1.1/4);
+        $extrakaz4=fmod($packagescount4,1)*4;
+
+        return [
+            'bez10' => $usedQuantity,
+            'pak9sa10' => round($packagescount9),
+            'dodatnokaz9' => round($extrakaz9),
+            'pak4sa10' => round($packagescount4),
+            'dodatnokaz4' => $extrakaz4,
+        ];
+    }
 
 }
