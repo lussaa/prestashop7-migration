@@ -9,6 +9,19 @@
 
 #studio-wrapper #canvas-wrapper {
     width: 800px;
+    background-image: linear-gradient(top left, rgba(215,220,236, .5) 0%, rgb(255,255,255) 50%, rgba(215,220,236,.5) 100%);
+    background-image: -o-linear-gradient(top left, rgba(215,220,236,.5) 0%, rgb(255,255,255) 50%, rgba(215,220,236,.5) 100%);
+    background-image: -moz-linear-gradient(top left, rgba(215,220,236,.5) 0%, rgb(255,255,255) 50%, rgba(215,220,236,.5) 100%);
+    background-image: -webkit-linear-gradient(top left, rgba(215,220,236,.5) 0%, rgb(255,255,255) 50%, rgba(215,220,236,.5) 100%);
+    background-image: -ms-linear-gradient(top left, rgba(215,220,236,.5) 0%, rgb(255,255,255) 50%, rgba(215,220,236,.5) 100%);
+    background-image: -webkit-gradient(
+    	linear,
+    	top left,
+    	bottom right,
+    	color-stop(0, rgba(215,220,236,.5)),
+    	color-stop(0.5, rgb(255,255,255,)),
+    	color-stop(1, rgba(215,220,236,.5))
+    );
 }
 
 div.used-color-list {
