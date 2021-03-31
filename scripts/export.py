@@ -390,6 +390,7 @@ def convert_model(model):
     tables['ps_group_shop'] = [{'id_group': g['id_group'], 'id_shop': 1} for g in tables['ps_group']]
     tables['ps_shop'] = [{'id_shop': 1, 'id_shop_group': 1, 'name': 'Stickaz', 'id_category': 1, 'theme_name': 'classic', 'active': 1, 'deleted': 0}]
     tables['ps_address'] = convert_addresses(tables['ps_address'])
+    tables['ps_lang'] = add_missing_lang_data(tables['ps_lang'])
     return model
 
 
@@ -658,6 +659,21 @@ def convert_addresses(ps_address):
             if a[field] is None:
                 a[field] = ''
     return converted
+
+def add_missing_lang_data(ps_lang):
+    for lang in ps_lang:
+        if(lang['iso_code']== 'en'):
+            lang['language_code'] = 'en-us'
+            lang['locale'] = 'en-US'
+        else:
+            lang['language_code'] = lang['iso_code'] + "-" + lang['iso_code']
+            lang['locale'] = lang['language_code']
+
+        lang['date_format_lite'] = 'Y-m-d'
+        lang['date_format_full'] = 'Y-m-d H:i:s'
+        lang['is_rtl'] = 0
+    return ps_lang
+
 
 
 if __name__ == '__main__':
