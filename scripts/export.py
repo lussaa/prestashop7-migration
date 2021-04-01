@@ -534,10 +534,12 @@ def delete_cutomized_products_from_tables(product_ids_to_keep, table_ps_product_
         if row['id_product'] not in customized_product_ids and row['id_product'] in product_ids_to_keep
     ]
     product_attributes_only_black_customizable = {
+        #reference contains info: id_product and product_size
         row['reference']: row for row in table_ps_product_attribute
         if row['id_product'] in customized_product_ids and row['id_product'] in product_ids_to_keep
     }
     id_product_attributes_without_customized = {row['id_product_attribute'] for row in table_product_attribute_without_customized}
+
     new_table_product_attribute_combination = [row for row in table_product_attribute_combination if row['id_product_attribute'] in id_product_attributes_without_customized]
     return product_attributes_only_black_customizable, table_product_attribute_without_customized, new_table_product_attribute_combination, customized_product_ids
 
@@ -575,16 +577,16 @@ def convert_products(products):
 
 
 def convert_ps_customiztion_to_attributes(product_ids_to_keep, customizations, ps_product_attribute, ps_attribute, ps_attribute_lang, product_attribute_combination):
-
+    #for products which have multiple ccolor choices. they exist only in black in attribute_combination table in the old prestashop
     product_attributes_only_black_customizable, ps_product_attribute, product_attribute_combination, customized_product_ids = \
         delete_cutomized_products_from_tables(product_ids_to_keep, ps_product_attribute, product_attribute_combination, customizations)
 
     for id_product in customized_product_ids:
         id_product_attribute = get_max_id_product_attribute(ps_product_attribute)
-        _kaz_sizes_dict = kaz_sizes_dict(ps_attribute, ps_attribute_lang)
+        kaz_sizes_dict = get_kaz_sizes_and_attribute_ids(ps_attribute, ps_attribute_lang)
 
-        for key_idsize in _kaz_sizes_dict:
-            reference = str(id_product) + "-s" + str(_kaz_sizes_dict[key_idsize])
+        for key_idsize in kaz_sizes_dict:
+            reference = str(id_product) + "-s" + str(kaz_sizes_dict[key_idsize])
             black_product_attributes = product_attributes_only_black_customizable[reference]
 
             for color in color_id_attributes(ps_attribute, ps_attribute_lang):
@@ -622,30 +624,24 @@ def convert_ps_customiztion_to_attributes(product_ids_to_keep, customizations, p
     return ps_product_attribute, product_attribute_combination
 
 
-def generate_size_and_color_attribute_list(ps_attribute, ps_attribute_lang):
-    size_ids = { row['id_attribute'] for row in ps_attribute if row['color'] is None or row['color']  == ''}
+def get_kaz_sizes_and_attribute_ids(ps_attribute, ps_attribute_lang):
+    size_id_attributes = { row['id_attribute'] for row in ps_attribute if row['id_attribute_group'] == 2} # 2 is size
+    kaz_sizes_dict = {}
     for row in ps_attribute_lang:
-        if row['id_lang'] == 1 and row['id_attribute'] in size_ids:
-            kaz_sizes[row['id_attribute']] = row['name']
-        else:
-            color_ids.append(row['id_attribute'])
+        if row['id_lang'] == 1 and row['id_attribute'] in size_id_attributes:
+            kaz_sizes_dict[row['id_attribute']] = row['name']
+    return kaz_sizes_dict
 
-
-def kaz_sizes_dict(ps_attribute, ps_attribute_lang):
-    global kaz_sizes
-    if kaz_sizes is None or kaz_sizes == {}:
-        generate_size_and_color_attribute_list(ps_attribute, ps_attribute_lang)
-        return kaz_sizes
-    else:
-        return kaz_sizes
 
 
 def color_id_attributes(ps_attribute, ps_attribute_lang):
-    if color_ids is None:
-        generate_size_and_color_attribute_list(ps_attribute, ps_attribute_lang)
-        return color_ids
-    else:
-        return color_ids
+    color_id_attributes = {row['id_attribute'] for row in ps_attribute if row['id_attribute_group'] == 3}  # 2 is size
+    color_ids = []
+    for row in ps_attribute_lang:
+        if row['id_lang'] == 1 and row['id_attribute'] in color_id_attributes:
+            color_ids.append(row['id_attribute'])
+    return color_ids
+
 
 
 def convert_product_lang(ps_product_lang, product_ids_to_keep):
