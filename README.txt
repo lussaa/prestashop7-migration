@@ -14,7 +14,10 @@ Export / Import:
 # ./scripts/import.sh
 
 
-
+Cleanup (before reinstalling):
+ # docker-compose down
+ # docker volume rm presta7_new_database
+ # git clean -xd (or remove individual folders, see a list with: git clean -xdn)
 
 
 
