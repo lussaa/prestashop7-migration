@@ -78,7 +78,9 @@ def run_export():
         'errors': errors,
     }
     write_model(original_model, 'original')
+    download_product_img_data(original_model['tables']['ps_product'])
     converted_model = convert_model(original_model)
+    configure_stickaz_site(converted_model['tables'])
     write_model(converted_model, 'converted')
 
 
@@ -262,7 +264,6 @@ def sanitize_name(name):
         name = '.'
     return name
 
-
 def download_images(categories):
     print("Starting download of category images. \n")
     pbar = ProgressBar()
@@ -275,17 +276,21 @@ def download_images(categories):
             pass
 
 
-def download_product_img_data(max_product_id):
-    product_images = sql_retrieve_raw(f'SELECT id_product, id_image FROM ps_image WHERE id_product <= {max_product_id} order by id_product, position asc')
+def download_product_img_data(ps_products):
+    print("Starting download of product images. \n")
+    products_to_keep = first(args.limit_products, ps_products)
+    ids_to_keep = {p['id_product'] for p in products_to_keep}
+
+    product_images = sql_retrieve_raw(f'SELECT id_product, id_image FROM ps_image WHERE id_product <= {max(ids_to_keep)} order by id_product, position asc')
     product_images_dict = defaultdict(list)
     for id_product, id_image in product_images:
         product_images_dict[id_product].append(id_image)
 
     if args.skip_images:
+        print ("Skipping images.")
         return product_images_dict
 
     pbar = ProgressBar()
-    print("Starting download of product images. \n")
     pbar = ProgressBar()
     for product_id in pbar(product_images_dict):
         for image_id in product_images_dict[product_id]:
@@ -332,6 +337,15 @@ class OurJsonEncoder(json.JSONEncoder):
         else:
             return json.JSONEncoder.default(self, obj)
 
+def configure_stickaz_site(tables):
+    remove_unwanted_modules(tables)
+
+def remove_unwanted_modules(tables):
+    return 
+    # ps_module_shop = tables['ps_module_shop']
+    # for row in ps_module_shop:
+    #     if row[''] == 25:
+    #         ps_module_shop.remove
 
 def convert_model(model):
     model = copy(model)
@@ -544,8 +558,8 @@ def delete_cutomized_products_from_tables(product_ids_to_keep, table_ps_product_
     return product_attributes_only_black_customizable, table_product_attribute_without_customized, new_table_product_attribute_combination, customized_product_ids
 
 
-def convert_ps_image(ps_image, products, identifier = 'id_product'):
-    products_to_keep = first(args.limit_products, products)
+def convert_ps_image(ps_image, ps_products, identifier = 'id_product'):
+    products_to_keep = first(args.limit_products, ps_products)
     ids_to_keep = {p[identifier] for p in products_to_keep}
     new_table = [
         row for row in ps_image

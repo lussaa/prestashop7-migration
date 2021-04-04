@@ -1,0 +1,36 @@
+/*@media (min-width:500px){.container{width:720px;max-width:100%}}*/
+.col-md-7.right-nav{
+    min-width: 300px;
+    width: 300px;
+    float: right;
+}
+.col-md-5.col-xs-12{
+    width: 65%;
+}
+#logo{
+    display: inline-block;
+    margin-right: 25px;
+}
+
+#header .header-nav {
+    border-bottom: 2px transparent ;
+    max-height: 150px;
+    padding-bottom: 10px;
+    margin-bottom: 0px;
+    background: #f2f6ff;
+
+}
+#header .header-nav .search-widget input {
+    width: 400px;
+    /*padding-top: 60px;*/
+}
+#header .header-top{
+    padding-bottom: 1px;
+    padding-top: 30px;
+    background: #00b5cb;
+}
+#header .header-top a[data-depth="0"]{
+    color: white;
+}
+
+#header .top-menu a[data-depth="0"]:hover{color:#f0f0f0;text-decoration:none}
