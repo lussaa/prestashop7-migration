@@ -165,7 +165,12 @@
           PRIMARY KEY (`id_product`)
         ) ENGINE=MyISAM DEFAULT CHARSET=utf8';
         global $db;
-        $res = $db->query($sql);
+        try {
+            $res = $db->query($sql);
+        } catch (exception $e) {
+            echo $e->getMessage();
+            $res = false;
+        }
         if (!$res) {
             if($db->getNumberError() === 1050){ //already exists
                 echo "ps_product_stickaz exists " ."\n";
@@ -173,7 +178,7 @@
                 die("CREATE TABLE ps_product_stickaz failed: " . $db->getMsgError() ."number error:  " .$db->getNumberError(). "\n");
             }
         }
-        }
+    }
 
     function insert_compact($table_name, $columns, $rows) {
         $keys = [];
