@@ -87,7 +87,7 @@ $to_import = [
   'ps_shop'
 ];
 
-echo "Creating table ps_product_stickaz....";
+echo "Creating table ps_product_stickaz....\n";
 create_table_prod_stickaz();
 copy_images_to_locations($tables['ps_image']);
 

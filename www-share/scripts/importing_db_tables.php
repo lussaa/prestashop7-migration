@@ -156,12 +156,13 @@
     }
 
     function create_table_prod_stickaz(){
-        $sql = 'CREATE TABLE `ps_product_stickaz` (
+        $sql = 'CREATE TABLE IF NOT EXISTS `ps_product_stickaz` (
           `id_product` int(10) NOT NULL,
           `id_customer` int(10) NOT NULL,
           `json` longtext NOT NULL,
           `kaz_number` mediumint(9) DEFAULT NULL,
           `category` int(4) DEFAULT NULL,
+          `type` varchar(32) DEFAULT NULL,
           PRIMARY KEY (`id_product`)
         ) ENGINE=MyISAM DEFAULT CHARSET=utf8';
         global $db;
