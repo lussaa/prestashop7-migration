@@ -26,7 +26,7 @@
     <div class="buy-block-container">
         {foreach from=$groups key=id_attribute_group item=group}
             {if !empty($group.attributes)}
-                <div class="clearfix product-variants-item">
+                <div class="clearfix product-variants-item"  id="container_div_group_{$id_attribute_group}">
                     <span class="control-label">{$group.name}</span>
                     {if $group.group_type == 'select'}
                         <select
