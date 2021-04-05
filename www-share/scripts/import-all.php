@@ -3,6 +3,7 @@
 require_once('./config/config.inc.php');
 require_once ('/www-share/scripts/importing_db_tables.php');
 require_once ('/www-share/scripts/import-products.php');
+require_once ('/www-share/scripts/configure_stuff_on_site.php');
 
 $db = Db::getInstance();
 $input = "/www-share/data/model_converted.json";
@@ -102,6 +103,9 @@ add_special_presta7_shop_tables($tables,'ps_product_attribute_shop','id_product_
 
 
 echo "Done with attributes and combinations. Starting with images. \n";
+
+
+delete_from_table('ps_module_shop', 'id_module', 25);
 
 
 /*echo "Importing products.\n";
