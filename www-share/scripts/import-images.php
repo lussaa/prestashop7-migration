@@ -1,25 +1,10 @@
 <?php
 
+require_once ('/www-share/scripts/importing_db_tables.php');
 require_once('./config/config.inc.php');
 
+const IMG_PATH = "/www-share/data/img/p/";
 
-echo "Importing\n";
-
-$input = "/www-share/data/model_converted.json";
-$json = file_get_contents($input);
-$obj = json_decode($json);
-
-echo "Importing category images\n";
-
-$raw_categories = $obj->tables->ps_category;
-foreach($raw_categories as $raw_category) {
-  $id_category = $raw_category->id_category;
-  $image_source = "/www-share/data/img/c/" . $id_category .".jpg";
-  $image_dest = "./img/c/" . $id_category . ".jpg";
-  @copy($image_source, $image_dest);
-}
-
-echo "Importing product images\n";
 
 class MyAdminImportController extends AdminImportControllerCore
 {
@@ -29,25 +14,11 @@ class MyAdminImportController extends AdminImportControllerCore
 
     public static function copyImg($id_entity, $id_image = null, $url = '', $entity = 'products', $regenerate = true)
     {
-        $res = parent::copyImg($id_entity, $id_image, $url, $entity, $regenerate);
-        if (!$res) {
-          echo "Copy image failed: " . $id_entity . " / " . $id_image . "\n";
-        }
+        return parent::copyImg($id_entity, $id_image, $url, $entity, $regenerate);
+
 
     }
 }
-
-const IMG_PATH = "/www-share/data/img/p/";
-
-$raw_images = $obj->tables->ps_image;
-foreach($raw_images as $raw_image) {
-  $iid = $raw_image->id_image;
-  $pid = $raw_image->id_product;
-  $url = IMG_PATH . $pid . "-" . $iid . ".png";
-  MyAdminImportController::copyImg($pid, $iid, $url, 'products', true);
-}
-
-echo "Regenerating thumbnails\n";
 
 class MyAdminImagesController extends AdminImagesControllerCore
 {
@@ -64,19 +35,58 @@ class MyAdminImagesController extends AdminImagesControllerCore
       }
     }
   }
-  
+
   protected function trans($id, array $parameters = [], $domain = null, $locale = null) {
     return strtr($id, $parameters);
   }
 
 }
 
-$ic = new MyAdminImagesController;
-$ic->regenerateThumbnails();
+function import_images($ps_image, $ps_category){
+    echo "Importing product images\n";
+    import_product_images($ps_image);
+    echo "Importing category images\n";
+    import_category_images($ps_category);
+    //regenerate_thumbnails();
+}
 
+function regenerate_thumbnails() {
+    $ic = new MyAdminImagesController;
+    $ic->regenerateThumbnails();
+}
 
-echo "Done\n";
+function import_category_images($ps_category) {
+    $columns = $ps_category['columns'];
+    $rows = $ps_category['rows'];
+    foreach ($rows as $row) {
+        $row_reverted = zip($row, $columns);
+        $id_category = $row_reverted['id_category'];
+        $image_source = "/www-share/data/img/c/" . $id_category .".jpg";
+        //$image_dest = "./img/c/" . $id_category . ".jpg";
+        //@copy($image_source, $image_dest);
+        if (MyAdminImportController::copyImg($id_category, null, $image_source, 'categories', false)) {
+                //echo "Ok for cat id -> " .$id_category .".\n";
+        } else {
+            echo " # copy image failed for cat id -> " .$id_category .".\n";
+        }
+    }
+}
 
+function import_product_images($ps_image){
+    $columns = $ps_image['columns'];
+    $rows = $ps_image['rows'];
+    foreach ($rows as $row) {
 
+        $row_reverted = zip($row, $columns);
+        $id_product = $row_reverted['id_product'];
+        $image_id = $row_reverted['id_image'];
+        $url = IMG_PATH  .$id_product ."-" .$image_id .".png";
+        if (MyAdminImportController::copyImg($id_product, $image_id, $url, 'products', true)) {
+                //echo "Ok for img id -> " .$image_id .".\n";
+        } else {
+            echo " # copy image failed for img id -> " .$image_id .".\n";
+        }
+    }
+}
 ?>
 

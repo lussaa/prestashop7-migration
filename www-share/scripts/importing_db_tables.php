@@ -105,7 +105,6 @@
     }
 
      function import_table($table_name, $table_data) {
-        global $converters;
         empty_table($table_name);
         $converter = 'identity';
 
@@ -126,7 +125,6 @@
     }
 
     function convert($converter, $row, $columns) {
-        // TODO rewrite converters to avoid zip/unzip, or remove conversions in import
         $converted = $converter(zip($row, $columns));
         if ($converted != NULL) {
             return unzip($converted, $columns);
