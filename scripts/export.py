@@ -408,7 +408,17 @@ def convert_model(model):
     tables['ps_category_product'] = [cp for cp in tables['ps_category_product'] if cp['id_product'] in product_ids_to_keep]
     tables['ps_category_shop'] = [{'id_category': c['id_category'], 'id_shop': 1} for c in tables['ps_category']]
     tables['ps_group_shop'] = [{'id_group': g['id_group'], 'id_shop': 1} for g in tables['ps_group']]
-    tables['ps_shop'] = [{'id_shop': 1, 'id_shop_group': 1, 'name': 'Stickaz', 'id_category': 1, 'theme_name': 'classic', 'active': 1, 'deleted': 0}]
+    tables['ps_shop'] = [
+        {
+            'id_shop': 1,
+            'id_shop_group': 1,
+            'name': 'Stickaz',
+            'id_category': 1,
+            'theme_name': 'stickaz',
+            'active': 1,
+            'deleted': 0
+        }
+    ]
     tables['ps_address'] = convert_addresses(tables['ps_address'])
     tables['ps_lang'] = add_missing_lang_data(tables['ps_lang'])
     return model
