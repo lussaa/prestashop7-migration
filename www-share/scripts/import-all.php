@@ -25,14 +25,20 @@ $res = file_put_contents($config_file, $config);
 
 
 echo "Setting DB configuration\n";
-$config_item_name = 'MOD_BLOCKTOPMENU_ITEMS';
-$config_item_value = 'CAT2,CAT5,CAT9,CAT14';
-$sql = "UPDATE `ps_configuration` SET value = '" . $config_item_value . "' WHERE name = '" .$config_item_name ."';";
-$res = $db->query($sql);
-if (!$res) {
-    die("Update DB config failed: " . $db->getMsgError() ."number error:  " .$db->getNumberError(). "\n");
+$config_items = [
+    'MOD_BLOCKTOPMENU_ITEMS' => 'CAT2,CAT5,CAT9,CAT14',
+    'PS_ORDER_OUT_OF_STOCK' => '1',
+    'PS_LAST_QTIES' => '0',
+    'PS_STOCK_MANAGEMENT' => '0',
+    'PS_DISPLAY_QTIES' => '0',
+];
+foreach($config_items as $config_item_name => $config_item_value) {
+    $sql = "UPDATE `ps_configuration` SET value = '" . $config_item_value . "' WHERE name = '" .$config_item_name ."';";
+    $res = $db->query($sql);
+    if (!$res) {
+        die("Update DB config failed: " . $db->getMsgError() ."number error:  " .$db->getNumberError(). "\n");
+    }
 }
-
 
 
 // TODO use DB_PREFIX
