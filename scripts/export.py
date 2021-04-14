@@ -90,10 +90,18 @@ def run_export():
         'errors': errors,
     }
     write_model(original_model, 'model_original.json')
-    download_product_img_data(original_model['tables']['ps_product'])
     converted_model = convert_model(original_model)
+    download_images(converted_model['tables'])
     configure_stickaz_site(converted_model['tables'])
     write_model(converted_model, 'model_converted.json')
+
+
+def download_images(tables):
+    if args.skip_images:
+        print("Skipping images download.")
+        return
+    download_product_img_data(tables['ps_product'])
+    download_category_images(tables['ps_category'])
 
 
 def export_config():
@@ -275,10 +283,11 @@ def sanitize_name(name):
         name = '.'
     return name
 
-def download_images(categories):
+
+def download_category_images(ps_categories):
     print("Starting download of category images. \n")
     pbar = ProgressBar()
-    for c in pbar(categories):
+    for c in pbar(ps_categories):
         cid = c['id_category']
         try:
             download_category_image(cid)
@@ -288,17 +297,13 @@ def download_images(categories):
 
 
 def download_product_img_data(ps_products):
-    products_to_keep = first(args.limit_products, ps_products)
-    ids_to_keep = {p['id_product'] for p in products_to_keep}
+    ids_to_keep = {p['id_product'] for p in ps_products}
 
     product_images = sql_retrieve_raw(f'SELECT id_product, id_image FROM ps_image WHERE id_product <= {max(ids_to_keep)} order by id_product, position asc')
     product_images_dict = defaultdict(list)
     for id_product, id_image in product_images:
         product_images_dict[id_product].append(id_image)
 
-    if args.skip_images:
-        print("Skipping images download.")
-        return
     print("Starting download of product images. \n")
 
     bar = ProgressBar()
@@ -850,8 +855,8 @@ def fix_prices(tables, product_ids_to_keep):
     for product_id in product_ids_to_keep:
         kaz_count, number_of_colors = get_design_counts(product_id, tables)
         previous_price = get_price(product_id, tables)
-        print(f'Product {product_id} has {number_of_colors} colors, {kaz_count} kaz')
-        print(f'  previous price: {previous_price:.2f}')
+        #print(f'Product {product_id} has {number_of_colors} colors, {kaz_count} kaz')
+        #print(f'  previous price: {previous_price:.2f}')
         base_price = target_prices['base_price']
         linear_per_kaz = target_prices['linear_per_kaz']
         multicolor_surcharge = (number_of_colors - 1) * target_prices['surcharge_per_color']
@@ -860,7 +865,7 @@ def fix_prices(tables, product_ids_to_keep):
         new_price_rounded = int(2 * new_price) / 2
         # That was the tax-included price we want, but we have to store prices without tax
         new_price_before_tax = new_price_rounded / 1.2
-        print(f' suggested price: {new_price_rounded}, before tax: {new_price_before_tax}')
+        #   print(f' suggested price: {new_price_rounded}, before tax: {new_price_before_tax}')
         get_one_from_id(tables['ps_product'], 'id_product', product_id)['price'] = new_price_before_tax
         get_one_from_id(tables['ps_product_shop'], 'id_product', product_id)['price'] = new_price_before_tax
 

@@ -67,7 +67,7 @@ function import_category_images($ps_category) {
         if (MyAdminImportController::copyImg($id_category, null, $image_source, 'categories', false)) {
                 //echo "Ok for cat id -> " .$id_category .".\n";
         } else {
-            echo " # copy image failed for cat id -> " .$id_category .".\n";
+            echo " # copy image failed for cat id -> " .$id_category ." (image source: ". $image_source . ").\n";
         }
     }
 }
