@@ -41,6 +41,13 @@ foreach($config_items as $config_item_name => $config_item_value) {
     }
 }
 
+$sql = "UPDATE `ps_image_type` SET width = 367, height = 79  WHERE name = 'category_default';";
+$res = $db->query($sql);
+if (!$res) {
+    die("Update DB image_type failed: " . $db->getMsgError() ."number error:  " .$db->getNumberError(). "\n");
+}
+
+
 
 // TODO use DB_PREFIX
 $to_import = [
