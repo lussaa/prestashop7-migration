@@ -33,6 +33,8 @@
 
     {block name='cms_content'}
       {$cms.content nofilter}
+       {*{hook h='displayContactform'}*}
+        {widget name="contactform"}
     {/block}
 
     {block name='hook_cms_dispute_information'}
@@ -42,6 +44,9 @@
     {block name='hook_cms_print_button'}
       {hook h='displayCMSPrintButton'}
     {/block}
+
+
+
 
   </section>
 {/block}
