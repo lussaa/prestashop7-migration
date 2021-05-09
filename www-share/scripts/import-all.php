@@ -2,7 +2,7 @@
 
 require_once('./config/config.inc.php');
 require_once ('/www-share/scripts/importing_db_tables.php');
-require_once ('/www-share/scripts/import-products.php');
+require_once ('/www-share/scripts/import-images.php');
 require_once ('/www-share/scripts/configure_stuff_on_site.php');
 
 $db = Db::getInstance();
@@ -10,11 +10,6 @@ $input = "/www-share/data/model_converted.json";
 $json = file_get_contents($input);
 $obj = json_decode($json, true);
 $tables = $obj['tables'];
-
-
-//echo "Deleting all products\n";
-//
-//delete_products();
 
 echo "Importing...\n";
 
@@ -29,11 +24,29 @@ $config = str_replace($current_cookie_key, $cookiki, $config);
 $res = file_put_contents($config_file, $config);
 
 
-
-
-$converters = [
-
+echo "Setting DB configuration\n";
+$config_items = [
+    'MOD_BLOCKTOPMENU_ITEMS' => 'CAT2,CAT5,CAT9,CAT14',
+    'PS_ORDER_OUT_OF_STOCK' => '1',
+    'PS_LAST_QTIES' => '0',
+    'PS_STOCK_MANAGEMENT' => '0',
+    'PS_DISPLAY_QTIES' => '0',
+    'PS_DISP_UNAVAILABLE_ATTR' => '1',
 ];
+foreach($config_items as $config_item_name => $config_item_value) {
+    $sql = "UPDATE `ps_configuration` SET value = '" . $config_item_value . "' WHERE name = '" .$config_item_name ."';";
+    $res = $db->query($sql);
+    if (!$res) {
+        die("Update DB config failed: " . $db->getMsgError() ."number error:  " .$db->getNumberError(). "\n");
+    }
+}
+
+$sql = "UPDATE `ps_image_type` SET width = 367, height = 79  WHERE name = 'category_default';";
+$res = $db->query($sql);
+if (!$res) {
+    die("Update DB image_type failed: " . $db->getMsgError() ."number error:  " .$db->getNumberError(). "\n");
+}
+
 
 
 // TODO use DB_PREFIX
@@ -90,7 +103,11 @@ $to_import = [
 
 echo "Creating table ps_product_stickaz....\n";
 create_table_prod_stickaz();
-copy_images_to_locations($tables['ps_image']);
+
+
+import_images($tables['ps_image'], $tables['ps_category']);
+
+
 
 foreach($to_import as $t) {
   import_table($t, $tables[$t]);
@@ -107,14 +124,6 @@ echo "Done with attributes and combinations. Starting with images. \n";
 
 delete_from_table('ps_module_shop', 'id_module', 25);
 
-
-/*echo "Importing products.\n";
-
-echo "Importing products. \n";
-$raw_products = $obj['products'];
-
-import_products($raw_products);
-*/
 echo "Done\n";
 
 ?>

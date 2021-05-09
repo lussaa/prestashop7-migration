@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import math
 import re
 import os
 import json
@@ -90,10 +90,18 @@ def run_export():
         'errors': errors,
     }
     write_model(original_model, 'model_original.json')
-    download_product_img_data(original_model['tables']['ps_product'])
     converted_model = convert_model(original_model)
+    download_images(converted_model['tables'])
     configure_stickaz_site(converted_model['tables'])
     write_model(converted_model, 'model_converted.json')
+
+
+def download_images(tables):
+    if args.skip_images:
+        print("Skipping images download.")
+        return
+    download_product_img_data(tables['ps_product'])
+    download_category_images(tables['ps_category'])
 
 
 def export_config():
@@ -275,10 +283,11 @@ def sanitize_name(name):
         name = '.'
     return name
 
-def download_images(categories):
+
+def download_category_images(ps_categories):
     print("Starting download of category images. \n")
     pbar = ProgressBar()
-    for c in pbar(categories):
+    for c in pbar(ps_categories):
         cid = c['id_category']
         try:
             download_category_image(cid)
@@ -288,17 +297,13 @@ def download_images(categories):
 
 
 def download_product_img_data(ps_products):
-    products_to_keep = first(args.limit_products, ps_products)
-    ids_to_keep = {p['id_product'] for p in products_to_keep}
+    ids_to_keep = {p['id_product'] for p in ps_products}
 
     product_images = sql_retrieve_raw(f'SELECT id_product, id_image FROM ps_image WHERE id_product <= {max(ids_to_keep)} order by id_product, position asc')
     product_images_dict = defaultdict(list)
     for id_product, id_image in product_images:
         product_images_dict[id_product].append(id_image)
 
-    if args.skip_images:
-        print("Skipping images download.")
-        return
     print("Starting download of product images. \n")
 
     bar = ProgressBar()
@@ -373,26 +378,30 @@ def convert_model(model):
     tables['ps_attribute'] = convert_attribute(tables['ps_attribute'], tables['ps_attribute_lang'], tables['ps_attribute_group'])
     # Products
     tables['ps_product'], product_ids_to_keep = convert_products(tables['ps_product'])
+    tables['ps_product_shop'] = create_product_shop(tables['ps_product'])
     tables['ps_product_tag'] = [pt for pt in tables['ps_product_tag'] if pt['id_product'] in product_ids_to_keep]
     tables['ps_product_sale'] = [ps for ps in tables['ps_product_sale'] if ps['id_product'] in product_ids_to_keep]
-    tables['ps_product_lang'] = convert_product_lang(tables['ps_product_lang'], product_ids_to_keep)
+    fix_prices(tables, product_ids_to_keep)
+    product_ids_to_keep,\
     tables['ps_product_stickaz'],\
     tables['ps_product_attribute'],\
     tables['ps_product_attribute_combination'] = \
         convert_attribute_combinations(
             product_ids_to_keep,
+            tables['ps_product'],
             tables['ps_attribute'],
+            tables['ps_attribute_lang'],
             tables['ps_customization'],
             tables['ps_product_stickaz'],
             tables['ps_product_attribute'],
             tables['ps_product_attribute_combination'])
     fix_product_attribute(tables['ps_product_attribute'])
+    tables['ps_product_lang'] = convert_product_lang(tables['ps_product_lang'], product_ids_to_keep)
     # Orders
     tables['ps_cart'], tables['ps_cart_product'] = convert_cart_etc(tables['ps_cart'], tables['ps_cart_product'], product_ids_to_keep)
     tables['ps_order_detail'], order_ids_to_keep = convert_order_detail(tables['ps_order_detail'], product_ids_to_keep)
     tables['ps_orders'] = convert_orders(tables['ps_orders'], tables['ps_order_history'], order_ids_to_keep)
     tables['ps_order_history'] = [oh for oh in tables['ps_order_history'] if oh['id_order'] in order_ids_to_keep]
-    tables['ps_product_shop'] = create_product_shop(tables['ps_product'])
     #
     tables['ps_image'] = convert_ps_image(tables['ps_image'], tables['ps_product'])
     tables['ps_image_shop'] = deepcopy(tables['ps_image'])
@@ -404,7 +413,17 @@ def convert_model(model):
     tables['ps_category_product'] = [cp for cp in tables['ps_category_product'] if cp['id_product'] in product_ids_to_keep]
     tables['ps_category_shop'] = [{'id_category': c['id_category'], 'id_shop': 1} for c in tables['ps_category']]
     tables['ps_group_shop'] = [{'id_group': g['id_group'], 'id_shop': 1} for g in tables['ps_group']]
-    tables['ps_shop'] = [{'id_shop': 1, 'id_shop_group': 1, 'name': 'Stickaz', 'id_category': 1, 'theme_name': 'classic', 'active': 1, 'deleted': 0}]
+    tables['ps_shop'] = [
+        {
+            'id_shop': 1,
+            'id_shop_group': 1,
+            'name': 'Stickaz',
+            'id_category': 1,
+            'theme_name': 'stickaz',
+            'active': 1,
+            'deleted': 0
+        }
+    ]
     tables['ps_address'] = convert_addresses(tables['ps_address'])
     tables['ps_lang'] = add_missing_lang_data(tables['ps_lang'])
     return model
@@ -412,11 +431,14 @@ def convert_model(model):
 
 def convert_attribute_combinations(
         product_ids_to_keep,
+        ps_product,
         ps_attributes,
+        ps_attribute_lang,
         ps_customization,
         ps_product_stickaz,
         ps_product_attribute,
         ps_product_attribute_combination):
+    new_product_ids_to_keep = []
     new_ps_product_stickaz = []
     new_ps_product_attribute = []
     new_ps_product_attribute_combination = []
@@ -429,11 +451,16 @@ def convert_attribute_combinations(
         for a in ps_attributes
         if a['id_attribute_group'] == ATTRIBUTE_GROUP_COLOR
     ]
+    all_products = {
+        p['id_product']: p
+        for p in ps_product
+    }
     all_combinations = defaultdict(list)  # Combination ID -> list of attributes (values)
     for pac in ps_product_attribute_combination:
         all_combinations[pac['id_product_attribute']].append(pac['id_attribute'])
     next_combination_id = max(pac['id_product_attribute'] for pac in ps_product_attribute_combination) + 1
     for product_id in product_ids_to_keep:
+        product = all_products[product_id]
         # ps_product_attributes actually stores combinations available for a product
         # and ps_product_attribute.id_product_attribute gives the combination id
         this_product_combinations = get_all_from_id(ps_product_attribute, 'id_product', product_id)
@@ -441,6 +468,7 @@ def convert_attribute_combinations(
             # DB is corrupt, ex product 58 has product_attribute 287 with attribute 51 which doesnt exist
             print(f'Warning: ignoring corrupt product {product_id}')
             continue
+        new_product_ids_to_keep.append(product_id)
         t = get_product_type(product_id, ps_customization, this_product_combinations, all_attributes, all_combinations)
         existing_entry = get_one_from_id(ps_product_stickaz, 'id_product', product_id)
         new_ps_product_stickaz.append({'type': t.name, **existing_entry})
@@ -453,6 +481,8 @@ def convert_attribute_combinations(
                     attribute = all_attributes[attribute_ref]
                     if attribute['id_attribute_group'] == ATTRIBUTE_GROUP_KAZ_SIZE:
                         new_ps_product_attribute_combination.append({'id_attribute': attribute_ref, 'id_product_attribute': id_combination})
+                        kaz_size_attribute_id = attribute_ref
+                product_combination['price'] = price_impact(kaz_size_attribute_id, ps_attribute_lang, product)
         elif t == ProductType.BLACK_AND_WHITE_TINTABLE:
             # The combinations are for black. Add more combinations for all other colors
             for black_combination in this_product_combinations:
@@ -474,6 +504,7 @@ def convert_attribute_combinations(
                     color_combination['id_product_attribute'] = color_combination_id
                     is_black = color_id == black_attribute_id
                     color_combination['default_on'] = 1 if is_black and was_default else None
+                    color_combination['price'] = price_impact(kaz_size_attribute_id, ps_attribute_lang, product)
                     new_ps_product_attribute.append(color_combination)
                     new_ps_product_attribute_combination.append({'id_attribute': kaz_size_attribute_id, 'id_product_attribute': color_combination_id})
                     new_ps_product_attribute_combination.append({'id_attribute': color_id, 'id_product_attribute': color_combination_id})
@@ -483,7 +514,7 @@ def convert_attribute_combinations(
         else:
             raise ValueError(t)
     # TODO create the pack product
-    return new_ps_product_stickaz, new_ps_product_attribute, new_ps_product_attribute_combination
+    return new_product_ids_to_keep, new_ps_product_stickaz, new_ps_product_attribute, new_ps_product_attribute_combination
 
 
 def is_corrupt(this_product_combinations, all_combinations, all_attributes):
@@ -803,6 +834,72 @@ def add_missing_lang_data(ps_lang):
         lang['date_format_full'] = 'Y-m-d H:i:s'
         lang['is_rtl'] = 0
     return ps_lang
+
+
+target_prices = {
+    # In euros, tax-included
+    'base_price': 3,
+    'linear_per_kaz': (16 - 3) / 300, # aim for 300 kaz for 16e
+    'surcharge_per_color': 0.2,
+    'kaz_size_impact_multiplier': {
+        '1.5': 0,
+        '2': 2 / 1.5 - 1,
+        '3': 3 / 1.5 - 1,
+        '4': 4 / 1.5 - 1,
+        '5': 5 / 1.5 - 1,
+    }
+}
+
+
+def fix_prices(tables, product_ids_to_keep):
+    for product_id in product_ids_to_keep:
+        kaz_count, number_of_colors = get_design_counts(product_id, tables)
+        previous_price = get_price(product_id, tables)
+        #print(f'Product {product_id} has {number_of_colors} colors, {kaz_count} kaz')
+        #print(f'  previous price: {previous_price:.2f}')
+        base_price = target_prices['base_price']
+        linear_per_kaz = target_prices['linear_per_kaz']
+        multicolor_surcharge = (number_of_colors - 1) * target_prices['surcharge_per_color']
+        new_price = base_price + kaz_count * linear_per_kaz + multicolor_surcharge
+        # round to 0.5
+        new_price_rounded = int(2 * new_price) / 2
+        # That was the tax-included price we want, but we have to store prices without tax
+        new_price_before_tax = new_price_rounded / 1.2
+        #   print(f' suggested price: {new_price_rounded}, before tax: {new_price_before_tax}')
+        get_one_from_id(tables['ps_product'], 'id_product', product_id)['price'] = new_price_before_tax
+        get_one_from_id(tables['ps_product_shop'], 'id_product', product_id)['price'] = new_price_before_tax
+
+
+def price_impact(kaz_size_attribute_id, ps_attribute_lang, product):
+    product_price = product['price']
+    for al in ps_attribute_lang:
+        if al['id_attribute'] == kaz_size_attribute_id and al['id_lang'] == 1:
+            kaz_size_value = al['name']
+            multiplier = target_prices['kaz_size_impact_multiplier'][kaz_size_value]
+            raw_impact = product_price * multiplier
+            rounded_impact = int(2 * raw_impact) / 2
+            return rounded_impact
+
+
+def get_price(product_id, tables):
+    return get_one_from_id(tables['ps_product'], 'id_product', product_id)['price']
+
+
+def get_design_counts(product_id, tables):
+    design_json = get_one_from_id(tables['ps_product_stickaz'], 'id_product', product_id)['json']
+    design = json.loads(design_json)
+    return _get_design_counts(design)
+
+
+def _get_design_counts(design):
+    kaz_count = 0
+    counts = defaultdict(int)
+    for row in design['canvas']:
+        for color in row:
+            if color != '':
+                counts[color] += 1
+                kaz_count += 1
+    return kaz_count, len(counts.keys())
 
 
 if __name__ == '__main__':
