@@ -32,6 +32,7 @@ $config_items = [
     'PS_STOCK_MANAGEMENT' => '0',
     'PS_DISPLAY_QTIES' => '0',
     'PS_DISP_UNAVAILABLE_ATTR' => '1',
+    'HOWITWORKS_VIDEO_URl' => '36914205'
 ];
 foreach($config_items as $config_item_name => $config_item_value) {
     $sql = "UPDATE `ps_configuration` SET value = '" . $config_item_value . "' WHERE name = '" .$config_item_name ."';";
@@ -46,8 +47,22 @@ $res = $db->query($sql);
 if (!$res) {
     die("Update DB image_type failed: " . $db->getMsgError() ."number error:  " .$db->getNumberError(). "\n");
 }
-
-
+//Info page instead About us:
+$sql = "UPDATE stickaz.ps_cms_lang
+SET meta_title='Info', head_seo_title='Info', meta_description='About Stickaz', meta_keywords='about us, informations', content='<h1 class=\"page-heading bottom-indent\">About </h1>
+<div class=\"row\">
+<div class=\"col-xs-12 col-sm-4\">
+<div class=\"cms-block\">
+<h3 class=\"page-subheading\"></h3>
+</div>
+</div>
+</div>', link_rewrite='info'
+WHERE id_cms=4 AND id_shop=1 AND id_lang=1;
+";
+$res = $db->query($sql);
+if (!$res) {
+    die("Update DB 'about us' to 'info' failed: " . $db->getMsgError() ."number error:  " .$db->getNumberError(). "\n");
+}
 
 // TODO use DB_PREFIX
 $to_import = [

@@ -32,6 +32,8 @@
           {block name='hook_home'}
             {$HOOK_HOME nofilter}
           {/block}
+
+            {widget name="howitworks"}
         {/block}
       </section>
     {/block}

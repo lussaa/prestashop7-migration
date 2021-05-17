@@ -34,7 +34,14 @@
     {block name='cms_content'}
       {$cms.content nofilter}
        {*{hook h='displayContactform'}*}
-        {widget name="contactform"}
+
+
+        {if $page.meta.title eq 'Info'}
+          Welcome Sir
+            {widget name="infopage"}
+        {/if}
+
+
     {/block}
 
     {block name='hook_cms_dispute_information'}
