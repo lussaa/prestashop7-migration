@@ -9,7 +9,7 @@
     <div class="row">
         <div class="col-xs-2">
             <div class="image">
-                <img src="/modules/infopage/views/img/home-how-it-works-1.png">
+                <img src="/modules/howitworks/views/img/home-how-it-works-1.png">
             </div>
             <div class="clearfix">
                 <span class="icon sprites-home-steps-icon">1</span>
@@ -18,7 +18,7 @@
         </div>
         <div class="col-xs-2">
             <div class="image">
-                <img src="/modules/infopage/views/img/home-how-it-works-2.png">
+                <img src="/modules/howitworks/views/img/home-how-it-works-2.png">
             </div>
             <div class="clearfix">
                 <span class="icon sprites-home-steps-icon">2</span>
@@ -27,7 +27,7 @@
         </div>
         <div class="col-xs-2">
             <div class="image">
-                <img src="/modules/infopage/views/img/home-how-it-works-3.png">
+                <img src="/modules/howitworks/views/img/home-how-it-works-3.png">
             </div>
             <div class="clearfix">
                 <span class="icon sprites-home-steps-icon">3</span>

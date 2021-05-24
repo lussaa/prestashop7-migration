@@ -61,9 +61,9 @@
             {l s='See the details in the "How it works" section.'}</p>
             <h4 class="stickaz-box-icon">{l s='Box'}</h4>
             <ul>
-                <li><a class="info-inside-box-pic first" href="/modules/infopage/views/img/info-inside-big-1.png" rel="info-box"><img src="/modules/infopage/views/img/info-inside-1.png"></a></li>
-                <li><a class="info-inside-box-pic second" href="/modules/infopage/views/img/info-inside-big-2.png" rel="info-box"><img src="/modules/infopage/views/img/info-inside-2.png"></a></li>
-                <li><a class="info-inside-box-pic third" href="/modules/infopage/views/img/info-inside-big-3.png" rel="info-box"><img src="/modules/infopage/views/img/info-inside-3.png"></a></li>
+                <li><a class="info-inside-box-pic first" href="/themes/stickaz/img/info-inside-big-1.png" rel="info-box"></a></li>
+                <li><a class="info-inside-box-pic second" href="/themes/stickaz/img/info-inside-big-2.png" rel="info-box"></a></li>
+                <li><a class="info-inside-box-pic third" href="/themes/stickaz/img/info-inside-big-3.png" rel="info-box"></a></li>
             </ul>
             <div class="clear"></div>
             <h4 class="stickaz-mini-icon">{l s='Mini Box'}</h4>
@@ -101,51 +101,51 @@
         </ul>
     </div>
 
-    {*<div class="info-section section-left" id="collections">*}
+    <div class="info-section section-left" id="collections">
+        <div class="header">
+            <div class="corner"></div>
+            <h2>{l s='Collections'}</h2>
+        </div>
+        <div class="info-collection-section">
+            <a class="img info-stickaz-collection-img" href="{$link->getCategoryLink($stickaz_collection->id_category, $stickaz_collection->link_rewrite)}" title="{l s='Stickaz Collection'}"></a>
+            <div class="info-collection-text">
+                    <h3 class="stickaz-collection"><a href="{$link->getCategoryLink($stickaz_collection->id_category, $stickaz_collection->link_rewrite)}" title="{l s='Stickaz Collection'}">{l s='Stickaz Collection'}</a></h3>
+                <p>{l s='Inspired work from the Stickaz team.'}</p>
+                <p>{l s='All the classic pixel-art models.'}</p>
+                <p>{l s='Arranged by themes: City, Icon, Monsters, Animals ...'}</p>
+            </div>
+        </div>
+        <div class="info-collection-section">
+            <a class="img info-community-collection-img" href="{$link->getCategoryLink($community_collection->id_category, $community_collection->link_rewrite)}" title="{l s='Community Collection'}"></a>
+            <div class="info-collection-text">
+                <h3 class="community"><a href="{$link->getCategoryLink($community_collection->id_category, $community_collection->link_rewrite)}" title="{l s='Community Collection'}">{l s='Community Collection'}</a></h3>
+                <p>{l s='Designs made by the Stickaz members.'}</p>
+		<p>{l s='Create your own and share it.'}</p>
+                <p>{l s='Browse between more than thousands of models.'}</p>
+            </div>
+        </div>
+    {*</div>*}
+
+    {*<div class="info-section section-right" id="studio">*}
         {*<div class="header">*}
             {*<div class="corner"></div>*}
-            {*<h2>{l s='Collections'}</h2>*}
+            {*<h2>{l s='Studio'}</h2>*}
         {*</div>*}
         {*<div class="info-collection-section">*}
-            {*<a class="img info-stickaz-collection-img" href="{$link->getCategoryLink($stickaz_collection->id_category, $stickaz_collection->link_rewrite)}" title="{l s='Stickaz Collection'}"></a>*}
-            {*<div class="info-collection-text">*}
-                {*<h3 class="stickaz-collection"><a href="{$link->getCategoryLink($stickaz_collection->id_category, $stickaz_collection->link_rewrite)}" title="{l s='Stickaz Collection'}">{l s='Stickaz Collection'}</a></h3>*}
-                {*<p>{l s='Inspired work from the Stickaz team.'}</p>*}
-                {*<p>{l s='All the classic pixel-art models.'}</p>*}
-                {*<p>{l s='Arranged by themes: City, Icon, Monsters, Animals ...'}</p>*}
+            {*<a class="img info-studio-pen" href="{$link->getPageLink('studio.php', false)}"></a>*}
+            {*<div class="info-studio-text">*}
+                {*<h3 class="studio"><a href="{$link->getPageLink('studio.php', false)}">{l s='Create your model'}</a></h3>*}
+                {*<p>{l s='With our online'} <a href="{$link->getPageLink('studio.php', true)}">Studio</a> {l s='editing tool, you can create your very own model Kaz by Kaz. Have fun recreating your favorite characters, logos, monuments and more ... in pixel art.'}</p>*}
             {*</div>*}
         {*</div>*}
         {*<div class="info-collection-section">*}
-            {*<a class="img info-community-collection-img" href="{$link->getCategoryLink($community_collection->id_category, $community_collection->link_rewrite)}" title="{l s='Community Collection'}"></a>*}
-            {*<div class="info-collection-text">*}
-                {*<h3 class="community"><a href="{$link->getCategoryLink($community_collection->id_category, $community_collection->link_rewrite)}" title="{l s='Community Collection'}">{l s='Community Collection'}</a></h3>*}
-                {*<p>{l s='Designs made by the Stickaz members.'}</p>*}
-		{*<p>{l s='Create your own and share it.'}</p>*}
-                {*<p>{l s='Browse between more than thousands of models.'}</p>*}
+            {*<a class="img info-studio-preview" href="{$link->getPageLink('studio.php', false)}"></a>*}
+            {*<div class="info-studio-text">*}
+                {*<h3 class="studio"><a href="{$link->getPageLink('studio.php', false)}">{l s='Share your creations'}</a></h3>*}
+                {*<p>{l s='Submit your creations and get them published in the official catalogue and earn a 10% coupon on each sales.'}</p>*}
             {*</div>*}
         {*</div>*}
     {*</div>*}
-
-    <div class="info-section section-right" id="studio">
-        <div class="header">
-            <div class="corner"></div>
-            <h2>{l s='Studio'}</h2>
-        </div>
-        <div class="info-collection-section">
-            <a class="img info-studio-pen" href="{$link->getPageLink('studio.php', false)}"></a>
-            <div class="info-studio-text">
-                <h3 class="studio"><a href="{$link->getPageLink('studio.php', false)}">{l s='Create your model'}</a></h3>
-                <p>{l s='With our online'} <a href="{$link->getPageLink('studio.php', true)}">Studio</a> {l s='editing tool, you can create your very own model Kaz by Kaz. Have fun recreating your favorite characters, logos, monuments and more ... in pixel art.'}</p>
-            </div>
-        </div>
-        <div class="info-collection-section">
-            <a class="img info-studio-preview" href="{$link->getPageLink('studio.php', false)}"></a>
-            <div class="info-studio-text">
-                <h3 class="studio"><a href="{$link->getPageLink('studio.php', false)}">{l s='Share your creations'}</a></h3>
-                <p>{l s='Submit your creations and get them published in the official catalogue and earn a 10% coupon on each sales.'}</p>
-            </div>
-        </div>
-    </div>
 
     <div class="clear"></div>
 

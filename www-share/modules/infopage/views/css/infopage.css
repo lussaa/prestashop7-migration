@@ -22,7 +22,7 @@
     text-transform: uppercase;
 }
 .info-menu ul {
-    list-style: none;
+    list-style: none !important;
 }
 .info-menu li {
     height: 26px;
@@ -412,4 +412,7 @@
 .info-studio-text p {
     font-size: 15px;
     line-height: 1.4;
+}
+svg:not(:root), symbol, image, marker, pattern, foreignObject {
+    overflow: hidden
 }

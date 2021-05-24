@@ -36,8 +36,7 @@
        {*{hook h='displayContactform'}*}
 
 
-        {if $page.meta.title eq 'Info'}
-          Welcome Sir
+        {if $page.meta.title eq 'Infos'}
             {widget name="infopage"}
         {/if}
 

@@ -26,7 +26,7 @@ $res = file_put_contents($config_file, $config);
 
 echo "Setting DB configuration\n";
 $config_items = [
-    'MOD_BLOCKTOPMENU_ITEMS' => 'CAT2,CAT5,CAT9,CAT14',
+    'MOD_BLOCKTOPMENU_ITEMS' => 'CAT2,CAT5,CAT14,CMS4,CAT13,CAT20',
     'PS_ORDER_OUT_OF_STOCK' => '1',
     'PS_LAST_QTIES' => '0',
     'PS_STOCK_MANAGEMENT' => '0',
@@ -49,14 +49,14 @@ if (!$res) {
 }
 //Info page instead About us:
 $sql = "UPDATE stickaz.ps_cms_lang
-SET meta_title='Info', head_seo_title='Info', meta_description='About Stickaz', meta_keywords='about us, informations', content='<h1 class=\"page-heading bottom-indent\">About </h1>
+SET meta_title='Infos', head_seo_title='Infos', meta_description='About Stickaz', meta_keywords='about us, informations', content='<h1 class=\"page-heading bottom-indent\">About </h1>
 <div class=\"row\">
 <div class=\"col-xs-12 col-sm-4\">
 <div class=\"cms-block\">
 <h3 class=\"page-subheading\"></h3>
 </div>
 </div>
-</div>', link_rewrite='info'
+</div>', link_rewrite='infos'
 WHERE id_cms=4 AND id_shop=1 AND id_lang=1;
 ";
 $res = $db->query($sql);

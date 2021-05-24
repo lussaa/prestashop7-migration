@@ -94,9 +94,13 @@ class InfoPage extends Module implements WidgetInterface
 
 
     public function getWidgetVariables($hookName, array $configuration){
-
+        // get the categories infos for the links
+        $stickazCollection = new Category(_STICKAZ_COLLECTION_, Tools::getValue('id_lang'));
+        $communityCollection = new category(_COMMUNITY_, Tools::getValue('id_lang'));
         return [
-
+            'stickaz_collection' => $stickazCollection,
+//            'HOOK_INFO' => Module::hookExec('stickazinfo'),
+            'community_collection' => $communityCollection
         ];
     }
 
