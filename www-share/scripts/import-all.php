@@ -32,7 +32,10 @@ $config_items = [
     'PS_STOCK_MANAGEMENT' => '0',
     'PS_DISPLAY_QTIES' => '0',
     'PS_DISP_UNAVAILABLE_ATTR' => '1',
-    'HOWITWORKS_VIDEO_URl' => '36914205'
+    'HOWITWORKS_VIDEO_URl' => '36914205',
+    'PS_LOGO' => 'logo-stickaz.png',
+    'PS_LOGO_MAIL' => 'logo-stickaz.png',
+    'PS_SHOP_NAME' => 'Stickaz'
 ];
 foreach($config_items as $config_item_name => $config_item_value) {
     $sql = "UPDATE `ps_configuration` SET value = '" . $config_item_value . "' WHERE name = '" .$config_item_name ."';";

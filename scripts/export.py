@@ -318,12 +318,17 @@ def download_product_img_data(ps_products):
 
 
 def download_category_image(cid):
-        image_url = f'https://www.stickaz.com/img/c/{cid}.jpg'
-        destination_dir = os.path.realpath(os.path.join(here, '../www-share/data/img/c'))
-        destination_path = os.path.join(destination_dir, f'{cid}.jpg')
-        with urllib.request.urlopen(image_url) as src:
+    image_url = f'https://www.stickaz.com/img/c/{cid}.jpg'
+    destination_dir = os.path.realpath(os.path.join(here, '../www-share/data/img/c'))
+    destination_path = os.path.join(destination_dir, f'{cid}.jpg')
+    download(image_url, destination_path)
+
+
+def download(source, destination):
+        with urllib.request.urlopen(source) as src:
+            destination_dir = os.path.dirname(destination)
             os.makedirs(destination_dir, exist_ok=True)
-            with open(destination_path, 'wb') as dest:
+            with open(destination, 'wb') as dest:
                 dest.write(src.read())
 
 
