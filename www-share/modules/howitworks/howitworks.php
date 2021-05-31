@@ -94,6 +94,9 @@ class HowItWorks extends Module implements WidgetInterface
     public function getWidgetVariables($hookName, array $configuration){
         $notifications = false;
         $videoId = Configuration::get('HOWITWORKS_VIDEO_URL');
+        if ($videoId == null) {
+            $videoId = '36914205';
+        }
         $videoCode = '<iframe src="//player.vimeo.com/video/'.$videoId.'?portrait=0&amp;color=00b3cb" width="393" height="221" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>';
 
         return [

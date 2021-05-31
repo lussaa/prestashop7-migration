@@ -8,8 +8,9 @@ HERE_DIR_NAME=`basename $REPO_ROOT`
 PRESTA_CONTAINER=${HERE_DIR_NAME}_apache_1
 
 set -e
+docker exec -i $PRESTA_CONTAINER chown -R www-data /var/www/html
 docker exec -i -u www-data $PRESTA_CONTAINER php /var/www/html/install/index_cli.php --domain=localhost:8090 --db_server=database --db_name=stickaz --db_user=stickaz --db_password=stickaz
-docker exec -i $PRESTA_CONTAINER rm -r /var/www/html/install
+docker exec -i -u www-data $PRESTA_CONTAINER rm -r /var/www/html/install
 docker exec -i -u www-data $PRESTA_CONTAINER mv /var/www/html/admin /var/www/html/bo
 
 docker exec -i -u www-data $PRESTA_CONTAINER ln -s /www-share/custom_pages /var/www/html/custom_pages

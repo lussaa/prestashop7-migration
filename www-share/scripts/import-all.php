@@ -138,6 +138,10 @@ echo "Done with attributes and combinations. Starting with images. \n";
 
 
 delete_from_table('ps_module_shop', 'id_module', 25);
+// Banner and text block on the home page
+delete_from_table('ps_module_shop', 'id_module', 11);
+delete_from_table('ps_module_shop', 'id_module', 19);
+//
 
 echo "Done\n";
 

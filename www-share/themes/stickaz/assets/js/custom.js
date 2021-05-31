@@ -75,3 +75,5 @@ if($(".comb-size").length)
 
     $(".comb-size").first().click(); // small hack to tell the application to select the 1.5 size by default
 }
+
+}

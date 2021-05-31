@@ -5,8 +5,8 @@ function getStickazSize(kazSize)
     var width = parseFloat($('#default-width').html());
     var height = parseFloat($('#default-height').html());
     var defaultSize = parseFloat($('#default-size').html());
-    console.log('Width:', width);
-    console.log('defaultSize:', defaultSize);
+    //console.log('Width:', width);
+    //console.log('defaultSize:', defaultSize);
 
     return new Array((width/defaultSize) * kazSize, (height/defaultSize) * kazSize);
 }
@@ -36,8 +36,8 @@ function getStickazSize(kazSize)
 var width = parseFloat($('#default-width').html());
 var height = parseFloat($('#default-height').html());
 var defaultSize = parseFloat($('#default-size').html());
-console.log('Width:', width);
-console.log('defaultSize:', defaultSize);
+//console.log('Width:', width);
+//console.log('defaultSize:', defaultSize);
 // default product - setting values on the product
 // console.log('**************************************************************************************:');
 //
