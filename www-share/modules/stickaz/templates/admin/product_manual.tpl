@@ -42,36 +42,5 @@
         {/foreach}
     </div>
 
-    <div id="color-shipping">
-        <div id="palette-colors">
-            <table id="color-list">
-                <tr id="header">
-                    <th class="color">Color name</th>
-                    <th class="colorcode">Color code</th>
-                    <th class="colorcount">Broj bez 10%</th>
-                    <th class="packscount">Paketa od 9 sa10%</th>
-                    <th class="packscount">Dodatno kaz[9]</th>
-                    <th class="packscount">Paketa od 4sa10%</th>
-                    <th class="packscount">Dodatno kaz[4]</th>
-                </tr>
-                {foreach $shippingColors as $color}
-                    <tr id="c{$color.code}" class="colorline">
-                        <td class="colorname" style="background-color: {$color.color};">
-                            <span>{$color.name}</span>
-                        </td>
-                        <td class="colorcode">{$color.code}</td>
-                        <td class="colorcount">{$color.counts.bez10}</td>
-                        <td class="packagescount9">{$color.counts.pak9sa10}</td>
-                        <td class="extrakaz9">{$color.counts.dodatnokaz9}</td>
-                        <td class="packagescount4">{$color.counts.pak4sa10}</td>
-                        <td class="extrakaz4">{$color.counts.dodatnokaz4}</td>
-                    </tr>
-                {/foreach}
-            </table>
-
-        </div>
-    </div>
-
-
 </body>
 </html>

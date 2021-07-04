@@ -52,7 +52,6 @@ class AdminStickazProductManualController extends ModuleAdminController
                 ),
                 'availableColors' => $colors,
                 'usedColors' => $usedColors,
-                'shippingColors' => self::getShippingInfo($usedColors),
                 'productId' => $productId,
                 'product' => $product,
                 'productName' => $productName,
@@ -116,32 +115,5 @@ class AdminStickazProductManualController extends ModuleAdminController
         return $count;
     }
 
-    private static function getShippingInfo($usedColors) {
-        $info = [];
-        foreach ($usedColors as $usedColor) {
-            $info[] = [
-                'code' => $usedColor['code'],
-                'name' => $usedColor['name'],
-                'color' => $usedColor['color'],
-                'counts' => self::getShippingCounts($usedColor['quantity']),
-            ];
-        }
-        return $info;
-    }
-
-    private static function getShippingCounts($usedQuantity) {
-        $packagescount9 = ($usedQuantity*1.1/9);         //1.1 is to get plus extra 10%
-        $extrakaz9=fmod($packagescount9,1)*9;
-        $packagescount4 = ($usedQuantity*1.1/4);
-        $extrakaz4=fmod($packagescount4,1)*4;
-
-        return [
-            'bez10' => $usedQuantity,
-            'pak9sa10' => round($packagescount9),
-            'dodatnokaz9' => round($extrakaz9),
-            'pak4sa10' => round($packagescount4),
-            'dodatnokaz4' => $extrakaz4,
-        ];
-    }
 
 }
