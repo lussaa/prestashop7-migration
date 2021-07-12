@@ -866,7 +866,7 @@ def add_missing_lang_data(ps_lang):
 
 
 def adjust_ps_carrier(ps_carrier):
-    kept_carriers = [c for c in ps_carrier if not_specific_french_carrier(c)]
+    kept_carriers = [c for c in ps_carrier if not_specific_french_carrier_and_active(c)]
 
     transformed_carriers = [remove_old_carrier_fields(c, position) for position, c in enumerate(kept_carriers)]
     return transformed_carriers
@@ -892,8 +892,8 @@ target_prices = {
     }
 }
 
-def not_specific_french_carrier(carrier):
-    return 'Retrait Boutique Stickaz' not in carrier['name'] and 'Colissimo' not in carrier['name'] and 'Suivi' not in carrier['name'] and 'Mondial' not in carrier['name'] and 'FedEx' not in carrier['name'] and 'Lettre' not in carrier['name'] and carrier['active']== 0
+def not_specific_french_carrier_and_active(carrier):
+    return 'Retrait Boutique Stickaz' not in carrier['name'] and 'Colissimo' not in carrier['name'] and 'Suivi' not in carrier['name'] and 'Mondial' not in carrier['name'] and 'FedEx' not in carrier['name'] and 'Lettre' not in carrier['name'] and carrier['active']== 1
 
 def fix_prices(tables, product_ids_to_keep):
     for product_id in product_ids_to_keep:
