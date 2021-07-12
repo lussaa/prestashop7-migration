@@ -1,8 +1,25 @@
+<html>
+    <head>
+
+        <title>Stickaz Product Manual</title>
+
+
+        {foreach $my_css as $item}
+          <link rel="stylesheet" href="{$item|escape:'html':'UTF-8'}" type="text/css" />
+        {/foreach}
+        {foreach $my_js as $item}
+          <script src="{$item|escape:'html':'UTF-8'}"></script>
+        {/foreach}
+
+	</head>
+<body>
+
 <h1>Order {$orderId}</h1>
 
 <h2>Addresses</h2>
 
-<ul class="address item">
+
+<ul class="address item invoice">
 	<li class="address_title">{l s='Invoice'}</li>
 	{if $address_invoice->company}<li class="address_company">{$address_invoice->company|escape:'htmlall':'UTF-8'}</li>{/if}
 	<li class="address_name">{$address_invoice->firstname|escape:'htmlall':'UTF-8'} {$address_invoice->lastname|escape:'htmlall':'UTF-8'}</li>
@@ -31,18 +48,57 @@
     <tr>
         <th>Name</th>
         <th>Quantity</th>
+		<th>To ship</th>
     </tr>
 {foreach $productDetails $pd}
     <tr>
-        <th>
+        <td>
             <a href="{$link->getAdminLink('AdminStickazProductManual', true, [], ['id_product' => $pd['product_id'], 'id_lang' => $orderLang])}">
                 {$pd['product_name']}
             </a>
-        </th>
-        <th>
-            {$pd['product_quantity']}
-        </th>
+        </td>
+        <td>
+            {$pd['product_quantity']} x
+        </td>
+
+		<td>
+
+			<div id="color-shipping">
+				<div id="palette-colors">
+					<table class="color-list">
+						<tr id="header">
+							<th class="color">Color name</th>
+							<th class="colorcode">Color code</th>
+							<th class="colorcount">Broj bez 10%</th>
+							<th class="packscount">Paketa od 9 sa10%</th>
+							<th class="packscount">Dodatno kaz[9]</th>
+							<th class="packscount">Paketa od 4sa10%</th>
+							<th class="packscount">Dodatno kaz[4]</th>
+						</tr>
+						{foreach $pd['shippingColors'] as $color}
+							<tr id="c{$color.code}" class="colorline">
+								<td class="colorname" style="background-color: {$color.color};">
+									<span>{$color.name}</span>
+								</td>
+								<td class="colorcode">{$color.code}</td>
+								<td class="colorcount">{$color.counts.bez10}</td>
+								<td class="packagescount9">{$color.counts.pak9sa10}</td>
+								<td class="extrakaz9">{$color.counts.dodatnokaz9}</td>
+								<td class="packagescount4">{$color.counts.pak4sa10}</td>
+								<td class="extrakaz4">{$color.counts.dodatnokaz4}</td>
+							</tr>
+						{/foreach}
+					</table>
+
+				</div>
+			</div>
+
+		</td>
+
+
 
     </tr>
 {/foreach}
 </table>
+
+</body>

@@ -1,0 +1,34 @@
+ul.address li {
+    display: block;
+}
+
+ul.address.invoice {
+    opacity: 20%;
+}
+
+.address_title {
+    font-weight: bold;
+}
+
+
+
+table#products {
+    border-collapse: collapse;
+}
+
+table#products td,th {
+    text-align: center;
+    border: 1px solid black;
+}
+
+table#products > tbody > tr > th {
+    background-color: antiquewhite;
+}
+
+table.color-list {
+    border-collapse: collapse;
+}
+
+table.color-list th {
+    background-color: lightgrey;
+}
