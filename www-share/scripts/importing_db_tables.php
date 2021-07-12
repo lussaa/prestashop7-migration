@@ -40,6 +40,25 @@
         return $x;
     }
 
+    function add_special_presta7_shop_tabl_carrier_tax($tables, $table_to_insert = 'ps_attribute_group_shop', $source_table = 'ps_carrier', $id_name = "id_carrier", $column_presta_new = "id_tax_rules_group"){
+        empty_table($table_to_insert);
+
+        $source_columns = $tables[$source_table]['columns'];
+        $rows_source = $tables[$source_table]['rows'];
+        $id_shop = 1;
+        $count = 0;
+        foreach ($rows_source as $row_source_array){ //foreach id_attribute_group
+            $row_source = zip($row_source_array, $source_columns);
+            $source_id_value = $row_source[$id_name];
+
+            $escaped = escape(array($id_name => $source_id_value, "id_shop" => $id_shop, $column_presta_new => 1));
+
+            insert($table_to_insert, $escaped, true);
+            $count++;
+        }
+        echo "Inserted " .$count ." rows in " .$table_to_insert ."\n";
+    }
+
 
     function insert($table, $data, $null_values = false) {
         global $db;

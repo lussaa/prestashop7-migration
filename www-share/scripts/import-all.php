@@ -50,22 +50,10 @@ $res = $db->query($sql);
 if (!$res) {
     die("Update DB image_type failed: " . $db->getMsgError() ."number error:  " .$db->getNumberError(). "\n");
 }
-//Info page instead About us:
-$sql = "UPDATE stickaz.ps_cms_lang
-SET meta_title='Infos', head_seo_title='Infos', meta_description='About Stickaz', meta_keywords='about us, informations', content='<h1 class=\"page-heading bottom-indent\">About </h1>
-<div class=\"row\">
-<div class=\"col-xs-12 col-sm-4\">
-<div class=\"cms-block\">
-<h3 class=\"page-subheading\"></h3>
-</div>
-</div>
-</div>', link_rewrite='infos'
-WHERE id_cms=4 AND id_shop=1 AND id_lang=1;
-";
-$res = $db->query($sql);
-if (!$res) {
-    die("Update DB 'about us' to 'info' failed: " . $db->getMsgError() ."number error:  " .$db->getNumberError(). "\n");
-}
+
+
+create_infos_page($db);
+
 
 // TODO use DB_PREFIX
 $to_import = [
@@ -116,7 +104,16 @@ $to_import = [
   'ps_group_shop',
   'ps_category_group',
   'ps_customer_group',
-  'ps_shop'
+  'ps_shop',
+  'ps_carrier',
+  'ps_carrier_zone',
+  'ps_carrier_group',
+  'ps_carrier_lang',
+  'ps_delivery',
+  'ps_product_carrierd',
+  'ps_range_weight',
+  'ps_range_price'
+
 ];
 
 echo "Creating table ps_product_stickaz....\n";
@@ -135,7 +132,10 @@ add_special_presta7_shop_tables($tables,'ps_attribute_shop', 'id_attribute', 'ps
 add_special_presta7_shop_tables($tables,'ps_attribute_group_shop','id_attribute_group', 'ps_attribute_group');
 add_special_presta7_shop_tables($tables,'ps_product_attribute_shop','id_product_attribute', 'ps_product_attribute',
     array("id_product", "price", "ecotax", "wholesale_price", "weight", "unit_price_impact", "minimal_quantity", "default_on"));
+add_special_presta7_shop_tables($tables, 'ps_carrier_shop', 'id_carrier', 'ps_carrier');
+add_special_presta7_shop_tabl_carrier_tax($tables, 'ps_carrier_tax_rules_group_shop', 'ps_carrier');
 
+insert_croatia_carrier_zone($db);
 
 echo "Done with attributes and combinations. Starting with images. \n";
 
@@ -147,6 +147,44 @@ delete_from_table('ps_module_shop', 'id_module', 19);
 //
 
 echo "Done\n";
+
+/**
+ * @param $db
+ */
+function create_infos_page($db): void
+{
+//Info page instead About us:
+    $sql = "UPDATE stickaz.ps_cms_lang
+SET meta_title='Infos', head_seo_title='Infos', meta_description='About Stickaz', meta_keywords='about us, informations', content='<h1 class=\"page-heading bottom-indent\">About </h1>
+<div class=\"row\">
+<div class=\"col-xs-12 col-sm-4\">
+<div class=\"cms-block\">
+<h3 class=\"page-subheading\"></h3>
+</div>
+</div>
+</div>', link_rewrite='infos'
+WHERE id_cms=4 AND id_shop=1 AND id_lang=1;
+";
+    $res = $db->query($sql);
+    if (!$res) {
+        die("Update DB 'about us' to 'info' failed: " . $db->getMsgError() . "number error:  " . $db->getNumberError() . "\n");
+    }
+}
+
+function insert_croatia_carrier_zone($db): void{
+    $sql = "INSERT INTO stickaz.ps_zone (id_zone, name, active) VALUES(12, 'Croatia', 1);";
+    $res = $db->query($sql);
+    if (!$res) {
+        error_log("Insert CROATIA carrier_zone failed: " . $db->getMsgError() ."number error:  " .$db->getNumberError(). "\n");
+    }
+}
+
+function fix_carrier_data(): void{
+
+    // remove pick up at stickay-store
+
+    //
+}
 
 ?>
 

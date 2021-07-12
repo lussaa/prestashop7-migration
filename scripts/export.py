@@ -210,6 +210,7 @@ GROUP BY
 """
 
 
+
 def export_tables_simple():
     tables = [
         'ps_orders',
@@ -256,6 +257,13 @@ def export_tables_simple():
         'ps_category_group',
         'ps_customer_group',
         'ps_group_lang',
+        'ps_carrier',
+        'ps_carrier_zone',
+        'ps_carrier_group',
+        'ps_carrier_lang',
+        'ps_delivery',
+        'ps_range_weight',
+        'ps_range_price',
     ]
     return {
         table: sql_retrieve(f'SELECT * FROM {table}')
@@ -371,6 +379,20 @@ def remove_unwanted_modules(tables):
     #         ps_module_shop.remove
 
 
+def create_ps_product_carrier(ps_carrier, ps_product):
+    ps_product_carrier = []
+    for carrier in ps_carrier:
+        for product in ps_product:
+            product_carrier = {}
+            product_carrier['id_product'] = product['id_product']
+            product_carrier['id_carrier_reference'] = carrier['id_carrier']
+            product_carrier['id_shop'] = 1
+            ps_product_carrier.append(product_carrier)
+
+    return ps_product_carrier
+
+
+
 def convert_model(model):
     model = copy(model)
     tables = model['tables']
@@ -431,6 +453,8 @@ def convert_model(model):
     ]
     tables['ps_address'] = convert_addresses(tables['ps_address'])
     tables['ps_lang'] = add_missing_lang_data(tables['ps_lang'])
+    tables['ps_carrier'] =  adjust_ps_carrier(tables['ps_carrier'])
+    tables['ps_product_carrier'] =  create_ps_product_carrier(tables['ps_carrier'],tables['ps_product'])
     return model
 
 
@@ -841,6 +865,19 @@ def add_missing_lang_data(ps_lang):
     return ps_lang
 
 
+def adjust_ps_carrier(ps_carrier):
+    kept_carriers = [c for c in ps_carrier if not_specific_french_carrier(c)]
+
+    transformed_carriers = [remove_old_carrier_fields(c, position) for position, c in enumerate(kept_carriers)]
+    return transformed_carriers
+
+def remove_old_carrier_fields(carrier, position):
+    carrier['id_reference'] = carrier['id_carrier']
+    carrier['position'] = position
+    del carrier['emc_type']
+    del carrier['emc_services_id_es']
+    return  carrier
+
 target_prices = {
     # In euros, tax-included
     'base_price': 3,
@@ -855,6 +892,8 @@ target_prices = {
     }
 }
 
+def not_specific_french_carrier(carrier):
+    return 'Retrait Boutique Stickaz' not in carrier['name'] and 'Colissimo' not in carrier['name'] and 'Suivi' not in carrier['name'] and 'Mondial' not in carrier['name'] and 'FedEx' not in carrier['name'] and 'Lettre' not in carrier['name'] and carrier['active']== 0
 
 def fix_prices(tables, product_ids_to_keep):
     for product_id in product_ids_to_keep:

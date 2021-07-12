@@ -7,6 +7,17 @@ First time (after start)
  # ./install.sh
 
 
+To stuff current(old) stickaz db into a mysql container:
+
+    docker exec -it old_stickaz_db mysql -e "create database old"
+    (echo "SET FOREIGN_KEY_CHECKS=0;" ; cat data/stickaz_com1.sql) | docker exec -i old_stickaz_db mysql old
+
+
+Query data out of the mysql example:
+
+
+    docker exec -it old_stickaz_db mysql old -e "select count(*) from ps_product_stickaz where json is null"
+
 
 Export / Import:
 
@@ -19,24 +30,6 @@ Cleanup (before reinstalling):
  # docker volume rm presta7_new_database
  # git clean -xd (or remove individual folders, see a list with: git clean -xdn)
 
-
-
-
-
-
-
-To stuff current stickaz db into a mysql container:
-
-
-
-    docker exec -it old_stickaz_db mysql -e "create database old"
-    (echo "SET FOREIGN_KEY_CHECKS=0;" ; cat data/stickaz_com1.sql) | docker exec -i old_stickaz_db mysql old
-
-
-Query data out of the mysql example:
-
-
-    docker exec -it old_stickaz_db mysql old -e "select count(*) from ps_product_stickaz where json is null"
 
 
 
