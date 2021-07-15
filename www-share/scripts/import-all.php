@@ -110,7 +110,7 @@ $to_import = [
   'ps_carrier_group',
   'ps_carrier_lang',
   'ps_delivery',
-  'ps_product_carrierd',
+  'ps_product_carrier',
   'ps_range_weight',
   'ps_range_price'
 

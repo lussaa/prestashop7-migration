@@ -876,6 +876,13 @@ def remove_old_carrier_fields(carrier, position):
     carrier['position'] = position
     del carrier['emc_type']
     del carrier['emc_services_id_es']
+    if carrier['url'] is None:
+        carrier['url'] = ''
+    if carrier['external_module_name'] is None:
+        carrier['external_module_name'] = ''
+    if carrier['id_carrier'] == 124:
+        # Hardcoded for 124 but we could search in ps_delivery instead
+        carrier['shipping_method'] = 2  # 1 weight, 2 price
     return  carrier
 
 target_prices = {
