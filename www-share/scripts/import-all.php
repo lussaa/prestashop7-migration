@@ -25,6 +25,8 @@ $res = file_put_contents($config_file, $config);
 
 
 echo "Setting DB configuration\n";
+$stripe_private_key = $obj['config']['stripe_private_key'];
+$stripe_public_key = $obj['config']['stripe_public_key'];
 $config_items = [
     'MOD_BLOCKTOPMENU_ITEMS' => 'CAT2,CAT5,CAT14,CMS4,CAT13,CAT20',
     'PS_ORDER_OUT_OF_STOCK' => '1',
@@ -35,7 +37,9 @@ $config_items = [
     'HOWITWORKS_VIDEO_URl' => '36914205',
     'PS_LOGO' => 'logo-stickaz.png',
     'PS_LOGO_MAIL' => 'logo-stickaz.png',
-    'PS_SHOP_NAME' => 'Stickaz'
+    'PS_SHOP_NAME' => 'Stickaz',
+    'STRIPE_KEY' => $stripe_private_key,
+    'STRIPE_PUBLISHABLE' => $stripe_public_key,
 ];
 foreach($config_items as $config_item_name => $config_item_value) {
     $sql = "UPDATE `ps_configuration` SET value = '" . $config_item_value . "' WHERE name = '" .$config_item_name ."';";

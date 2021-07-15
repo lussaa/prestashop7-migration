@@ -107,6 +107,8 @@ def download_images(tables):
 def export_config():
     return {
         'cookie_key': export_cookie_key(),
+        'stripe_public_key': sql_get("SELECT * FROM ps_configuration WHERE name = 'MSSTRIPE_PUBLIC_KEY'")['value'],
+        'stripe_private_key': sql_get("SELECT * FROM ps_configuration WHERE name = 'MSSTRIPE_SECRET_KEY'")['value'],
     }
 
 
