@@ -42,7 +42,7 @@ $config_items = [
     'STRIPE_PUBLISHABLE' => $stripe_public_key,
 ];
 foreach($config_items as $config_item_name => $config_item_value) {
-    $sql = "UPDATE `ps_configuration` SET value = '" . $config_item_value . "' WHERE name = '" .$config_item_name ."';";
+    $sql = "REPLACE INTO `ps_configuration`(name, value) VALUES('" .$config_item_name ."', '" . $config_item_value . "');";
     $res = $db->query($sql);
     if (!$res) {
         die("Update DB config failed: " . $db->getMsgError() ."number error:  " .$db->getNumberError(). "\n");
