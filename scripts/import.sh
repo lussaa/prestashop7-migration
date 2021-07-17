@@ -17,6 +17,10 @@ docker exec -i -u www-data $PRESTA_CONTAINER ln -s /www-share/themes/stickaz /va
 docker exec -i -u www-data $PRESTA_CONTAINER ln -fs /www-share/themes/stickaz/logo-stickaz.png /var/www/html/img/logo-stickaz.png
 docker exec -i -u www-data $PRESTA_CONTAINER ln -fs /www-share/themes/stickaz/favicon.ico /var/www/html/img/favicon.ico
 
+docker exec -i -u www-data $PRESTA_CONTAINER ln -fs /www-share/modules/img_additional/75__stickaz_1.png /var/www/html/modules/ps_imageslider/images/75__stickaz_1.png
+docker exec -i -u www-data $PRESTA_CONTAINER ln -fs /www-share/modules/img_additional/88__stickaz_2.png /var/www/html/modules/ps_imageslider/images/88__stickaz_2.png
+docker exec -i -u www-data $PRESTA_CONTAINER ln -fs /www-share/modules/img_additional/04_stickaz_4.png /var/www/html/modules/ps_imageslider/images/04_stickaz_4.png
+
 docker exec -i -u www-data $PRESTA_CONTAINER php bin/console prestashop:module install stripe_official
 
 docker exec -i -u www-data $PRESTA_CONTAINER php -d memory_limit=1024M /www-share/scripts/import-all.php
@@ -31,4 +35,6 @@ docker exec -i -u www-data $PRESTA_CONTAINER php bin/console prestashop:module i
 docker exec -i -u www-data $PRESTA_CONTAINER php bin/console prestashop:module install productvariationswidget
 docker exec -i -u www-data $PRESTA_CONTAINER php bin/console prestashop:module install howitworks
 docker exec -i -u www-data $PRESTA_CONTAINER php bin/console prestashop:module install infopage
+
+cat pageconfigs.sql | docker exec -i $PRESTA_CONTAINER mysql -u stickaz --password=stickaz stickaz
 

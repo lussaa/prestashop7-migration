@@ -28,7 +28,7 @@ echo "Setting DB configuration\n";
 $stripe_private_key = $obj['config']['stripe_private_key'];
 $stripe_public_key = $obj['config']['stripe_public_key'];
 $config_items = [
-    'MOD_BLOCKTOPMENU_ITEMS' => 'CAT2,CAT5,CAT14,CMS4,CAT13,CAT20',
+    'MOD_BLOCKTOPMENU_ITEMS' => 'CAT2,CAT5,CAT14,CAT13,CAT20,CMS4',
     'PS_ORDER_OUT_OF_STOCK' => '1',
     'PS_LAST_QTIES' => '0',
     'PS_STOCK_MANAGEMENT' => '0',
@@ -40,6 +40,7 @@ $config_items = [
     'PS_SHOP_NAME' => 'Stickaz',
     'STRIPE_KEY' => $stripe_private_key,
     'STRIPE_PUBLISHABLE' => $stripe_public_key,
+    'HOMESLIDER_SPEED' => '4000'
 ];
 foreach($config_items as $config_item_name => $config_item_value) {
     $sql = "REPLACE INTO `ps_configuration`(name, value) VALUES('" .$config_item_name ."', '" . $config_item_value . "');";
