@@ -804,6 +804,14 @@ def convert_ps_image_lang(ps_image_lang, ps_image, identifier = 'id_image'):
 def convert_products(products):
     products_to_keep = first(args.limit_products, products)
     product_ids_to_keep = {p['id_product'] for p in products_to_keep}
+    # Additional pass to remove products without a ps_product_stickaz entry
+    for product_id in product_ids_to_keep:
+        existing_entry = maybe_get_one_from_id(ps_product_stickaz, 'id_product', product_id)
+        if existing_entry is None:
+            print(f'Warning: ignoring product missing in ps_product_stickaz {product_id}')
+            del products_to_keep[product_id]
+    product_ids_to_keep = {p['id_product'] for p in products_to_keep}
+    #
     for p in products_to_keep:
         del p['id_color_default']
         for field in ['supplier_reference']:
