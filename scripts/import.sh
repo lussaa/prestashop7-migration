@@ -41,5 +41,5 @@ docker exec -i -u www-data $PRESTA_CONTAINER php bin/console prestashop:module i
 docker exec -i -u www-data $PRESTA_CONTAINER php bin/console prestashop:module install howitworks
 docker exec -i -u www-data $PRESTA_CONTAINER php bin/console prestashop:module install infopage
 
-cat pageconfigs.sql | docker exec -i $PRESTA_CONTAINER mysql -u stickaz --password=stickaz stickaz
+cat $HERE/pageconfigs.sql | docker exec -i $PRESTA_CONTAINER mysql -u stickaz --password=stickaz stickaz
 

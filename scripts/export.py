@@ -499,9 +499,12 @@ def convert_attribute_combinations(
             # DB is corrupt, ex product 58 has product_attribute 287 with attribute 51 which doesnt exist
             print(f'Warning: ignoring corrupt product {product_id}')
             continue
+        existing_entry = maybe_get_one_from_id(ps_product_stickaz, 'id_product', product_id)
+        if existing_entry is None:
+            print(f'Warning: ignoring product missing in ps_product_stickaz {product_id}')
+            continue        
         new_product_ids_to_keep.append(product_id)
         t = get_product_type(product_id, ps_customization, this_product_combinations, all_attributes, all_combinations)
-        existing_entry = get_one_from_id(ps_product_stickaz, 'id_product', product_id)
         new_ps_product_stickaz.append({'type': t.name, **existing_entry})
         if t == ProductType.COLORED_DESIGN:
             # Keep the combinations. On each: drop color attributes, keep the kaz size attribute
@@ -599,10 +602,17 @@ def get_product_type(product_id, ps_customization, this_product_combinations, al
 
 
 def get_one_from_id(collection, id_field, id_value):
+    item = maybe_get_one_from_id(collection, id_field, id_value)
+    if item is None:
+        raise ValueError(f'not found where {id_field}={id_value}')
+    else:
+        return item
+
+def maybe_get_one_from_id(collection, id_field, id_value):
     for item in collection:
         if item[id_field] == id_value:
             return item
-    raise ValueError(f'not found where {id_field}={id_value}')
+    return None
 
 
 def get_all_from_id(collection, id_field, id_value):
