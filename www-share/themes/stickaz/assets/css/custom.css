@@ -32,6 +32,10 @@
 #header .header-top a[data-depth="0"]{
     color: white;
 }
+#mobile_top_menu_wrapper{
+    background: #00b5cb;
+}
+
 
 #header .top-menu a[data-depth="0"]:hover{color:#f0f0f0;text-decoration:none}
 
