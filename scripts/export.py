@@ -406,7 +406,7 @@ def convert_model(model):
     tables['ps_attribute_group'] = convert_attribute_group(tables['ps_attribute_group'])
     tables['ps_attribute'] = convert_attribute(tables['ps_attribute'], tables['ps_attribute_lang'], tables['ps_attribute_group'])
     # Products
-    tables['ps_product'], product_ids_to_keep = convert_products(tables['ps_product'])
+    tables['ps_product'], product_ids_to_keep = convert_products(tables['ps_product'],  tables['ps_product_stickaz'],)
     tables['ps_product_shop'] = create_product_shop(tables['ps_product'])
     tables['ps_product_tag'] = [pt for pt in tables['ps_product_tag'] if pt['id_product'] in product_ids_to_keep]
     tables['ps_product_sale'] = [ps for ps in tables['ps_product_sale'] if ps['id_product'] in product_ids_to_keep]
@@ -801,17 +801,16 @@ def convert_ps_image_lang(ps_image_lang, ps_image, identifier = 'id_image'):
     return new_table
 
 
-def convert_products(products):
-    products_to_keep = first(args.limit_products, products)
-    product_ids_to_keep = {p['id_product'] for p in products_to_keep}
-    # Additional pass to remove products without a ps_product_stickaz entry
-    for product_id in product_ids_to_keep:
-        existing_entry = maybe_get_one_from_id(ps_product_stickaz, 'id_product', product_id)
-        if existing_entry is None:
-            print(f'Warning: ignoring product missing in ps_product_stickaz {product_id}')
-            del products_to_keep[product_id]
-    product_ids_to_keep = {p['id_product'] for p in products_to_keep}
-    #
+def convert_products(products, ps_product_stickaz):
+
+    first_n_products = first(args.limit_products, products)
+
+    def has_stickaz_info(p):
+        return maybe_get_one_from_id(ps_product_stickaz, 'id_product', p['id_product']) is not None
+
+    product_ids_to_keep = {p['id_product'] for p in first_n_products if has_stickaz_info(p)}
+    products_to_keep = [p for p in first_n_products if p['id_product'] in product_ids_to_keep]
+
     for p in products_to_keep:
         del p['id_color_default']
         for field in ['supplier_reference']:
@@ -966,7 +965,11 @@ def _get_design_counts(design):
     kaz_count = 0
     counts = defaultdict(int)
     for row in design['canvas']:
+        if row is None:
+            continue
         for color in row:
+            if color is None:
+                continue
             if color != '':
                 counts[color] += 1
                 kaz_count += 1
