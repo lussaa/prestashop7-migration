@@ -306,6 +306,9 @@ def download_category_images(ps_categories):
             pass
 
 
+blacklisted_products = {991}
+
+
 def download_product_img_data(ps_products):
     ids_to_keep = {p['id_product'] for p in ps_products}
 
@@ -491,6 +494,9 @@ def convert_attribute_combinations(
         all_combinations[pac['id_product_attribute']].append(pac['id_attribute'])
     next_combination_id = max(pac['id_product_attribute'] for pac in ps_product_attribute_combination) + 1
     for product_id in product_ids_to_keep:
+        if product_id in blacklisted_products:
+            print(f'Warning: ignoring known bad product {product_id}')
+            continue
         product = all_products[product_id]
         # ps_product_attributes actually stores combinations available for a product
         # and ps_product_attribute.id_product_attribute gives the combination id
